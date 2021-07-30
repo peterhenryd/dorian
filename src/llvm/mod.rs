@@ -82,7 +82,7 @@ pub enum AtomicRMWBinOp {
 
 #[inline(always)]
 fn to_c_string(str: Option<&str>) -> CString {
-    CString::new(str.ok_or_else(|| "").unwrap())
+    CString::new(str.or_else(|| Some("")).unwrap())
         .expect("error creating CString")
 }
 
