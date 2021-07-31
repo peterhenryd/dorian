@@ -2,7 +2,7 @@
 
 The intuitive LLVM abstraction written in Rust.
 
-```
+```rs
 use crate::dorian::Dorian;
 use crate::llvm::execution_engine::ExtFn;
 use crate::llvm::OptimizationLevel;
