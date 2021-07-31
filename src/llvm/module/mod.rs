@@ -1,11 +1,11 @@
+use crate::llvm::context::Context;
+use crate::llvm::fun::Fun;
 use crate::llvm::sys::core::*;
 use crate::llvm::sys::LLVMModule;
-use crate::llvm::context::Context;
 use crate::llvm::target::triple::TargetTriple;
 use crate::llvm::types::Type;
 use crate::llvm::{from_c_string, to_c_string};
 use std::ptr::NonNull;
-use crate::llvm::function::Function;
 
 pub struct Module<'a>(&'a Context, NonNull<LLVMModule>);
 
@@ -55,12 +55,15 @@ impl<'a> Module<'a> {
         self.0
     }
 
-    pub unsafe fn add_function(&mut self, name: &str, function_type: Type) -> Function {
-        Function::from_raw(self.0, NonNull::new_unchecked(LLVMAddFunction(
-            self.1.as_ptr(),
-            to_c_string(Some(name)).as_ptr(),
-            function_type.as_raw().as_ptr(),
-        )))
+    pub unsafe fn add_fun(&mut self, name: &str, fun_type: Type) -> Fun<'a> {
+        Fun::<'a>::from_raw(
+            self.0,
+            NonNull::new_unchecked(LLVMAddFunction(
+                self.1.as_ptr(),
+                to_c_string(Some(name)).as_ptr(),
+                fun_type.as_raw().as_ptr(),
+            )),
+        )
     }
 }
 
@@ -80,6 +83,11 @@ impl Drop for Module<'_> {
 
 impl Clone for Module<'_> {
     fn clone(&self) -> Self {
-        unsafe { Module::from_raw(self.0, NonNull::new_unchecked(LLVMCloneModule(self.1.as_ptr()))) }
+        unsafe {
+            Module::from_raw(
+                self.0,
+                NonNull::new_unchecked(LLVMCloneModule(self.1.as_ptr())),
+            )
+        }
     }
 }

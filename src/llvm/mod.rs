@@ -7,12 +7,12 @@ pub mod basic_block;
 pub mod builder;
 pub mod context;
 pub mod execution_engine;
+pub mod fun;
 pub mod module;
 pub mod opcode;
 pub mod target;
 pub mod types;
 pub mod value;
-pub mod function;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -31,7 +31,7 @@ pub enum IntPredicate {
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub enum RealPredicate {
+pub enum FloatPredicate {
     False = 0,
     Oeq = 1,
     Ogt = 2,
@@ -80,10 +80,60 @@ pub enum AtomicRMWBinOp {
     FSub = 12,
 }
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum OptimizationLevel {
+    None,
+    Less,
+    Default,
+    Aggressive,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum AddressSpace {
+    Generic,
+    Global,
+    Shared,
+    Const,
+    Local,
+}
+
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum RelocMode {
+    Default = 0,
+    Static = 1,
+    PIC = 2,
+    DynamicNoPic = 3,
+    Ropi = 4,
+    Rwpi = 5,
+    RopiRwpi = 6,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum CodeModel {
+    Default = 0,
+    JitDefault = 1,
+    Tiny = 2,
+    Small = 3,
+    Kernel = 4,
+    Medium = 5,
+    Large = 6,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum CodeGenFileType {
+    AssemblyFile = 0,
+    ObjectFile = 1,
+}
+
 #[inline(always)]
 fn to_c_string(str: Option<&str>) -> CString {
-    CString::new(str.or_else(|| Some("")).unwrap())
-        .expect("error creating CString")
+    CString::new(str.or_else(|| Some("")).unwrap()).expect("error creating CString")
 }
 
 #[inline(always)]

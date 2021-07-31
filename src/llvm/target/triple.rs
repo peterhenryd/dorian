@@ -1,5 +1,5 @@
-use crate::llvm::sys::target_machine::LLVMGetDefaultTargetTriple;
 use crate::llvm::from_c_string;
+use crate::llvm::sys::target_machine::LLVMGetDefaultTargetTriple;
 
 pub struct TargetTriple<'a>(&'a str);
 

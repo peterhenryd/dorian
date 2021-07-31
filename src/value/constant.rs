@@ -1,9 +1,9 @@
 use crate::value::Value;
 
 #[derive(Copy, Clone)]
-pub struct Const<'a, V: Value<'a>>(&'a V);
+pub struct Const<'a, V: Value>(&'a V);
 
-impl<'a, V: Value<'a>> Const<'a, V> {
+impl<'a, V: Value> Const<'a, V> {
     pub unsafe fn new_unchecked(value: &'a V) -> Self {
         Const(value)
     }

@@ -1,14 +1,19 @@
+use crate::llvm::sys::LLVMTypeKind;
 pub(crate) use crate::llvm::types::Type as LlvmType;
+use crate::llvm::types::TypeKind;
 use crate::types::int::IntType;
 use llvm_sys::core::LLVMGetTypeKind;
-use crate::llvm::sys::LLVMTypeKind;
 
 pub mod data;
+pub mod float;
+pub mod fun;
 pub mod int;
-pub mod function;
+pub mod ptr;
 
-pub trait Type<'a> {
-    unsafe fn from_llvm_type_unchecked(llvm_type: LlvmType) -> Self where Self: Sized;
+pub trait Type {
+    unsafe fn from_llvm_type_unchecked(llvm_type: LlvmType) -> Self
+    where
+        Self: Sized;
 
     fn get_llvm_type(&self) -> LlvmType;
 
@@ -16,37 +21,11 @@ pub trait Type<'a> {
 
     fn as_int_type(&self) -> Option<IntType> {
         if let TypeKind::Int = self.get_kind() {
-            Some(unsafe {
-                IntType::from_llvm_type_unchecked(self.get_llvm_type())
-            })
+            Some(unsafe { IntType::from_llvm_type_unchecked(self.get_llvm_type()) })
         } else {
             None
         }
     }
-}
-
-#[derive(Copy, Clone)]
-pub enum TypeKind {
-    Void = 0,
-    F16 = 1,
-    F32 = 2,
-    F64 = 3,
-    X86F80 = 4,
-    BF16 = 18,
-    F128 = 5,
-    PpcF128 = 6,
-    Label = 7,
-    Int = 8,
-    Fn = 9,
-    Struct = 10,
-    Array = 11,
-    Ptr = 12,
-    Vector = 13,
-    Metadata = 14,
-    X86Mmx = 15,
-    Token = 16,
-    ScalableVector = 17,
-    X86Amx = 19,
 }
 
 #[derive(Copy, Clone)]
@@ -64,7 +43,7 @@ fn as_type_kind(llvm_type: &LlvmType) -> TypeKind {
         LLVMTypeKind::LLVMPPC_FP128TypeKind => TypeKind::PpcF128,
         LLVMTypeKind::LLVMLabelTypeKind => TypeKind::Label,
         LLVMTypeKind::LLVMIntegerTypeKind => TypeKind::Int,
-        LLVMTypeKind::LLVMFunctionTypeKind => TypeKind::Fn,
+        LLVMTypeKind::LLVMFunctionTypeKind => TypeKind::Fun,
         LLVMTypeKind::LLVMStructTypeKind => TypeKind::Struct,
         LLVMTypeKind::LLVMArrayTypeKind => TypeKind::Array,
         LLVMTypeKind::LLVMPointerTypeKind => TypeKind::Ptr,
@@ -78,8 +57,11 @@ fn as_type_kind(llvm_type: &LlvmType) -> TypeKind {
     }
 }
 
-impl<'a> Type<'a> for Raw {
-    unsafe fn from_llvm_type_unchecked(llvm_type: LlvmType) -> Self where Self: Sized {
+impl Type for Raw {
+    unsafe fn from_llvm_type_unchecked(llvm_type: LlvmType) -> Self
+    where
+        Self: Sized,
+    {
         Raw(llvm_type, as_type_kind(&llvm_type))
     }
 

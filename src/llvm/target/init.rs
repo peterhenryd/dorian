@@ -1,7 +1,7 @@
 use crate::llvm::sys::target::*;
 use crate::llvm::target::Target;
 
-impl Target {
+impl Target<'_> {
     pub fn initialize_amd_gpu_target_info() {
         unsafe {
             LLVMInitializeAMDGPUTargetInfo();
@@ -509,6 +509,78 @@ impl Target {
     pub fn initialize_webassembly_disassembler() {
         unsafe {
             LLVMInitializeWebAssemblyDisassembler();
+        }
+    }
+
+    pub fn initialize_all_target_infos() {
+        unsafe {
+            LLVM_InitializeAllTargetInfos();
+        }
+    }
+
+    pub fn initialize_all_targets() {
+        unsafe {
+            LLVM_InitializeAllTargets();
+        }
+    }
+
+    pub fn initialize_all_target_mcs() {
+        unsafe {
+            LLVM_InitializeAllTargetMCs();
+        }
+    }
+
+    pub fn initialize_all_asm_printers() {
+        unsafe {
+            LLVM_InitializeAllAsmPrinters();
+        }
+    }
+
+    pub fn initialize_all_asm_parsers() {
+        unsafe {
+            LLVM_InitializeAllAsmParsers();
+        }
+    }
+
+    pub fn initialize_all_disassemblers() {
+        unsafe {
+            LLVM_InitializeAllDisassemblers();
+        }
+    }
+
+    pub fn initialize_native_target() -> Result<(), ()> {
+        unsafe {
+            match LLVM_InitializeNativeTarget() {
+                1 => Err(()),
+                _ => Ok(()),
+            }
+        }
+    }
+
+    pub fn initialize_native_asm_parser() -> Result<(), ()> {
+        unsafe {
+            match LLVM_InitializeNativeAsmParser() {
+                1 => Err(()),
+                _ => Ok(()),
+            }
+        }
+    }
+
+    pub fn initialize_native_asm_printer() -> Result<(), ()> {
+        unsafe {
+            match LLVM_InitializeNativeAsmPrinter() {
+                1 => Err(()),
+                _ => Ok(()),
+            }
+        }
+    }
+
+    pub fn initialize_native_disassembler() -> Result<(), ()> {
+        unsafe {
+            match LLVM_InitializeNativeDisassembler() {
+                1 => Err(()),
+                _ => Ok(()),
+            }
         }
     }
 }

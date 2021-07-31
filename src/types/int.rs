@@ -1,8 +1,10 @@
-use crate::types::data::TypeData;
 use crate::dorian::Dorian;
-use crate::types::{Type, LlvmType, TypeKind};
+use crate::llvm::types::TypeKind;
+use crate::types::data::TypeData;
+use crate::types::{LlvmType, Type};
 use crate::value::int::IntValue;
 use crate::value::Value;
+use crate::llvm::target::TargetData;
 
 #[derive(Copy, Clone)]
 pub struct IntType(LlvmType);
@@ -17,7 +19,7 @@ impl IntType {
     }
 }
 
-impl<'a> Type<'a> for IntType {
+impl Type for IntType {
     unsafe fn from_llvm_type_unchecked(llvm_type: LlvmType) -> Self {
         Self(llvm_type)
     }
@@ -32,24 +34,21 @@ impl<'a> Type<'a> for IntType {
 }
 
 #[derive(Copy, Clone)]
-pub struct IntData {
-    pub bits: u32
+pub enum IntData<'a> {
+    Bits(u32),
+    Ptr(&'a TargetData),
 }
 
-impl IntData {
-    #[inline(always)]
-    pub fn new(bits: u32) -> IntData {
-        IntData { bits }
-    }
-}
-
-impl<'a> TypeData<'a> for IntData {
+impl TypeData for IntData<'_> {
     type Type = IntType;
 
     #[inline(always)]
     fn create(self, dorian: &Dorian) -> IntType {
-        IntType(
-            dorian.get_context().get_integer_type(self.bits),
-        )
+        let bits = match self {
+            IntData::Bits(bits) => bits,
+            IntData::Ptr(target_data) => target_data.get_ptr_size(),
+        };
+
+        unsafe { IntType::from_llvm_type_unchecked(dorian.get_context().get_integer_type(bits)) }
     }
 }

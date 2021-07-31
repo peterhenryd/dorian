@@ -1,8 +1,8 @@
-use crate::types::Type;
 use crate::dorian::Dorian;
+use crate::types::Type;
 
-pub trait TypeData<'a>: Clone {
-    type Type: Type<'a>;
+pub trait TypeData: Clone {
+    type Type: Type;
 
     fn create(self, dorian: &Dorian) -> Self::Type;
 }
