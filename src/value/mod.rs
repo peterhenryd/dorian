@@ -4,6 +4,7 @@ pub mod data;
 pub mod float;
 pub mod int;
 pub mod ptr;
+pub mod fun;
 
 use crate::llvm::types::TypeKind;
 pub(crate) use crate::llvm::value::Value as LlvmValue;

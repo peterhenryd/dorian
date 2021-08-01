@@ -1,9 +1,10 @@
 use crate::llvm::sys::core::{LLVMConstInt, LLVMConstIntOfStringAndSize, LLVMGetTypeKind, LLVMPointerType, LLVMGetElementType, LLVMArrayType};
-use crate::llvm::sys::LLVMType;
+use crate::llvm::sys::{LLVMType, LLVMTypeKind};
 use crate::llvm::value::Value;
 use crate::llvm::{to_c_string, AddressSpace};
 use std::mem::transmute;
 use std::ptr::NonNull;
+use crate::types::LlvmType;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Type(NonNull<LLVMType>);
@@ -99,4 +100,33 @@ pub enum TypeKind {
     ScalableVector = 17,
     // TODO: Implement
     X86Amx = 19,
+}
+
+impl TypeKind {
+    #[inline(always)]
+    pub fn of_llvm_type(llvm_type: &LlvmType) -> TypeKind {
+        let kind = unsafe { LLVMGetTypeKind(llvm_type.as_raw().as_ptr()) };
+        match kind {
+            LLVMTypeKind::LLVMVoidTypeKind => TypeKind::Void,
+            LLVMTypeKind::LLVMHalfTypeKind => TypeKind::F16,
+            LLVMTypeKind::LLVMFloatTypeKind => TypeKind::F32,
+            LLVMTypeKind::LLVMDoubleTypeKind => TypeKind::F64,
+            LLVMTypeKind::LLVMX86_FP80TypeKind => TypeKind::X86F80,
+            LLVMTypeKind::LLVMFP128TypeKind => TypeKind::F128,
+            LLVMTypeKind::LLVMPPC_FP128TypeKind => TypeKind::PpcF128,
+            LLVMTypeKind::LLVMLabelTypeKind => TypeKind::Label,
+            LLVMTypeKind::LLVMIntegerTypeKind => TypeKind::Int,
+            LLVMTypeKind::LLVMFunctionTypeKind => TypeKind::Fun,
+            LLVMTypeKind::LLVMStructTypeKind => TypeKind::Struct,
+            LLVMTypeKind::LLVMArrayTypeKind => TypeKind::Array,
+            LLVMTypeKind::LLVMPointerTypeKind => TypeKind::Ptr,
+            LLVMTypeKind::LLVMVectorTypeKind => TypeKind::Vector,
+            LLVMTypeKind::LLVMMetadataTypeKind => TypeKind::Metadata,
+            LLVMTypeKind::LLVMX86_MMXTypeKind => TypeKind::X86Mmx,
+            LLVMTypeKind::LLVMTokenTypeKind => TypeKind::Token,
+            LLVMTypeKind::LLVMScalableVectorTypeKind => TypeKind::ScalableVector,
+            LLVMTypeKind::LLVMBFloatTypeKind => TypeKind::BF16,
+            LLVMTypeKind::LLVMX86_AMXTypeKind => TypeKind::X86Amx,
+        }
+    }
 }
