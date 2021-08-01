@@ -1,7 +1,6 @@
 use crate::dorian::Dorian;
 use crate::llvm::execution_engine::ExtFn;
 use crate::llvm::OptimizationLevel;
-use crate::types::data::TypeData;
 use crate::types::fun::FunData;
 use crate::types::int::IntData;
 use crate::value::data::BuildValue;
