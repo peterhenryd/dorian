@@ -1,6 +1,6 @@
 use crate::value::Value;
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Const<'a, V: Value>(&'a V);
 
 impl<'a, V: Value> Const<'a, V> {

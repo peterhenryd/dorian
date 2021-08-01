@@ -1,7 +1,7 @@
 use crate::types::{Raw, Type};
 use crate::value::{LlvmValue, Value};
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct AnyValue(LlvmValue, Raw);
 
 impl AnyValue {

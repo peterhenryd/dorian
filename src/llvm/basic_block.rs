@@ -1,7 +1,7 @@
 use crate::llvm::sys::LLVMBasicBlock;
 use std::ptr::NonNull;
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct BasicBlock(NonNull<LLVMBasicBlock>);
 
 impl BasicBlock {

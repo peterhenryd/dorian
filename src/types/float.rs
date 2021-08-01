@@ -1,15 +1,26 @@
 use crate::dorian::Dorian;
 use crate::llvm::context::Context;
 use crate::llvm::types::TypeKind;
-use crate::types::data::TypeData;
-use crate::types::{LlvmType, Type};
+use crate::types::{LlvmType, Type, CreateType};
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct FloatType(LlvmType);
 
 impl Type for FloatType {
     unsafe fn from_llvm_type_unchecked(llvm_type: LlvmType) -> Self {
         Self(llvm_type)
+    }
+
+    fn valid_kinds() -> Vec<TypeKind> where Self: Sized {
+        vec![
+            TypeKind::F16,
+            TypeKind::F32,
+            TypeKind::F64,
+            TypeKind::X86F80,
+            TypeKind::BF16,
+            TypeKind::F128,
+            TypeKind::PpcF128,
+        ]
     }
 
     fn get_llvm_type(&self) -> LlvmType {
@@ -22,7 +33,7 @@ impl Type for FloatType {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum FloatData {
     F16 = 1,
     BF16 = 18,
@@ -33,7 +44,7 @@ pub enum FloatData {
     PpcF128 = 6,
 }
 
-impl TypeData for FloatData {
+impl CreateType for FloatData {
     type Type = FloatType;
 
     #[inline(always)]

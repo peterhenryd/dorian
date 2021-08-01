@@ -15,7 +15,7 @@ pub mod types;
 pub mod value;
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum IntPredicate {
     Eq = 32,
     Ne = 33,
@@ -30,7 +30,7 @@ pub enum IntPredicate {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum FloatPredicate {
     False = 0,
     Oeq = 1,
@@ -51,7 +51,7 @@ pub enum FloatPredicate {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum AtomicOrdering {
     NotAtomic = 0,
     Unordered = 1,
@@ -63,7 +63,7 @@ pub enum AtomicOrdering {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum AtomicRMWBinOp {
     Xchg = 0,
     Add = 1,
@@ -81,7 +81,7 @@ pub enum AtomicRMWBinOp {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum OptimizationLevel {
     None,
     Less,
@@ -90,7 +90,7 @@ pub enum OptimizationLevel {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum AddressSpace {
     Generic,
     Global,
@@ -101,7 +101,7 @@ pub enum AddressSpace {
 
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum RelocMode {
     Default = 0,
     Static = 1,
@@ -113,7 +113,7 @@ pub enum RelocMode {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum CodeModel {
     Default = 0,
     JitDefault = 1,
@@ -125,7 +125,7 @@ pub enum CodeModel {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum CodeGenFileType {
     AssemblyFile = 0,
     ObjectFile = 1,

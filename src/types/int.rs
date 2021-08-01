@@ -1,12 +1,11 @@
 use crate::dorian::Dorian;
 use crate::llvm::types::TypeKind;
-use crate::types::data::TypeData;
-use crate::types::{LlvmType, Type};
+use crate::types::{LlvmType, Type, CreateType};
 use crate::value::int::IntValue;
 use crate::value::Value;
 use crate::llvm::target::TargetData;
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct IntType(LlvmType);
 
 impl IntType {
@@ -24,6 +23,10 @@ impl Type for IntType {
         Self(llvm_type)
     }
 
+    fn valid_kinds() -> Vec<TypeKind> where Self: Sized {
+        vec![TypeKind::Int]
+    }
+
     fn get_llvm_type(&self) -> LlvmType {
         self.0
     }
@@ -33,13 +36,13 @@ impl Type for IntType {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum IntData<'a> {
     Bits(u32),
     Ptr(&'a TargetData),
 }
 
-impl TypeData for IntData<'_> {
+impl CreateType for IntData<'_> {
     type Type = IntType;
 
     #[inline(always)]

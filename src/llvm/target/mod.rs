@@ -40,6 +40,7 @@ impl<'a> Target<'a> {
     }
 }
 
+#[derive(Debug)]
 pub struct TargetData(NonNull<LLVMOpaqueTargetData>);
 
 impl TargetData {
@@ -52,7 +53,9 @@ impl TargetData {
     }
 
     pub fn get_ptr_size(&self) -> u32 {
-        unsafe { LLVMPointerSize(self.0.as_ptr()) }
+        unsafe {
+            LLVMPointerSize(self.0.as_ptr())
+        }
     }
 }
 

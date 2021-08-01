@@ -57,6 +57,37 @@ impl Context {
         }
     }
 
+    pub fn create_named_struct_type(&self, name: &str, parameters: Vec<Type>, is_packed: bool) -> Type {
+        unsafe {
+            let s = LLVMStructCreateNamed(self.0.as_ptr(), to_c_string(Some(name)).as_ptr());
+
+            let len = parameters.len();
+            LLVMStructSetBody(s, parameters.into_iter()
+                .map(|t| t.as_raw().as_ptr())
+                .collect::<Vec<_>>()
+                .as_mut_ptr(), len as u32, is_packed as i32);
+
+            Type::from_raw(NonNull::new_unchecked(s))
+        }
+    }
+
+    pub fn get_struct_type(&self, parameters: Vec<Type>, is_packed: bool) -> Type {
+        let len = parameters.len();
+        unsafe {
+            Type::from_raw(NonNull::new_unchecked(
+                LLVMStructTypeInContext(
+                    self.0.as_ptr(),
+                    parameters.into_iter()
+                        .map(|t| t.as_raw().as_ptr())
+                        .collect::<Vec<_>>()
+                        .as_mut_ptr(),
+                    len as u32,
+                    is_packed as i32
+                )
+            ))
+        }
+    }
+
     pub fn get_integer_type(&self, bits: u32) -> Type {
         unsafe {
             Type::from_raw(NonNull::new_unchecked(LLVMIntTypeInContext(
@@ -73,6 +104,7 @@ impl Context {
             )))
         }
     }
+
     pub fn get_bf16_type(&self) -> Type {
         unsafe {
             Type::from_raw(NonNull::new_unchecked(LLVMBFloatTypeInContext(
@@ -80,6 +112,7 @@ impl Context {
             )))
         }
     }
+
     pub fn get_f32_type(&self) -> Type {
         unsafe {
             Type::from_raw(NonNull::new_unchecked(LLVMFloatTypeInContext(
@@ -87,6 +120,7 @@ impl Context {
             )))
         }
     }
+
     pub fn get_f64_type(&self) -> Type {
         unsafe {
             Type::from_raw(NonNull::new_unchecked(LLVMDoubleTypeInContext(
@@ -94,6 +128,7 @@ impl Context {
             )))
         }
     }
+
     pub fn get_x86_f80_type(&self) -> Type {
         unsafe {
             Type::from_raw(NonNull::new_unchecked(LLVMX86FP80TypeInContext(
@@ -101,6 +136,7 @@ impl Context {
             )))
         }
     }
+
     pub fn get_f128_type(&self) -> Type {
         unsafe {
             Type::from_raw(NonNull::new_unchecked(LLVMFP128TypeInContext(
@@ -108,11 +144,20 @@ impl Context {
             )))
         }
     }
+
     pub fn get_ppc_f128_type(&self) -> Type {
         unsafe {
             Type::from_raw(NonNull::new_unchecked(LLVMPPCFP128TypeInContext(
                 self.0.as_ptr(),
             )))
+        }
+    }
+
+    pub fn get_void_type(&self) -> Type {
+        unsafe {
+            Type::from_raw(NonNull::new_unchecked(
+                LLVMVoidTypeInContext(self.0.as_ptr())
+            ))
         }
     }
 }

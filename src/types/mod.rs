@@ -3,15 +3,24 @@ pub(crate) use crate::llvm::types::Type as LlvmType;
 use crate::llvm::types::TypeKind;
 use crate::types::int::IntType;
 use llvm_sys::core::LLVMGetTypeKind;
+use crate::types::ptr::PtrType;
+use crate::dorian::Dorian;
+use std::fmt::Debug;
 
-pub mod data;
+pub mod void;
 pub mod float;
 pub mod fun;
 pub mod int;
 pub mod ptr;
+pub mod structure;
+pub mod array;
 
-pub trait Type {
+pub trait Type: Debug {
     unsafe fn from_llvm_type_unchecked(llvm_type: LlvmType) -> Self
+    where
+        Self: Sized;
+
+    fn valid_kinds() -> Vec<TypeKind>
     where
         Self: Sized;
 
@@ -26,9 +35,27 @@ pub trait Type {
             None
         }
     }
+
+    fn as_ptr_type<T: Type>(&self) -> Option<PtrType<T>> where Self: Sized {
+        if let TypeKind::Ptr = self.get_kind() {
+            let ptr = unsafe {
+                self.get_llvm_type().get_pointing_type()
+            };
+
+            if T::valid_kinds().contains(&ptr.get_kind()) {
+                return Some(unsafe {
+                    PtrType::from_llvm_type_unchecked(
+                        self.get_llvm_type(),
+                    )
+                });
+            }
+        }
+
+        None
+    }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Raw(LlvmType, TypeKind);
 
 fn as_type_kind(llvm_type: &LlvmType) -> TypeKind {
@@ -65,6 +92,31 @@ impl Type for Raw {
         Raw(llvm_type, as_type_kind(&llvm_type))
     }
 
+    fn valid_kinds() -> Vec<TypeKind> where Self: Sized {
+        vec![
+            TypeKind::Void,
+            TypeKind::F16,
+            TypeKind::F32,
+            TypeKind::F64,
+            TypeKind::X86F80,
+            TypeKind::BF16 ,
+            TypeKind::F128,
+            TypeKind::PpcF128,
+            TypeKind::Label,
+            TypeKind::Int,
+            TypeKind::Fun,
+            TypeKind::Struct,
+            TypeKind::Array,
+            TypeKind::Ptr,
+            TypeKind::Vector,
+            TypeKind::Metadata,
+            TypeKind::X86Mmx,
+            TypeKind::Token,
+            TypeKind::ScalableVector,
+            TypeKind::X86Amx,
+        ]
+    }
+
     fn get_llvm_type(&self) -> LlvmType {
         self.0
     }
@@ -72,4 +124,10 @@ impl Type for Raw {
     fn get_kind(&self) -> TypeKind {
         self.1
     }
+}
+
+pub trait CreateType: Clone {
+    type Type: Type;
+
+    fn create(self, dorian: &Dorian) -> Self::Type;
 }

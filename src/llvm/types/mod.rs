@@ -1,11 +1,11 @@
-use crate::llvm::sys::core::{LLVMConstInt, LLVMConstIntOfStringAndSize, LLVMGetTypeKind, LLVMPointerType, LLVMGetElementType};
+use crate::llvm::sys::core::{LLVMConstInt, LLVMConstIntOfStringAndSize, LLVMGetTypeKind, LLVMPointerType, LLVMGetElementType, LLVMArrayType};
 use crate::llvm::sys::LLVMType;
 use crate::llvm::value::Value;
 use crate::llvm::{to_c_string, AddressSpace};
 use std::mem::transmute;
 use std::ptr::NonNull;
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Type(NonNull<LLVMType>);
 
 impl Type {
@@ -30,6 +30,16 @@ impl Type {
             NonNull::new_unchecked(
                 LLVMGetElementType(self.0.as_ptr())
             )
+        )
+    }
+
+    pub fn get_array_type(&self, size: u32) -> Type {
+        Type::from_raw(
+            unsafe {
+                NonNull::new_unchecked(
+                    LLVMArrayType(self.0.as_ptr(), size)
+                )
+            }
         )
     }
 }
@@ -58,8 +68,9 @@ impl Type {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum TypeKind {
+    // TODO: Implement
     Void = 0,
     F16 = 1,
     F32 = 2,
@@ -68,16 +79,24 @@ pub enum TypeKind {
     BF16 = 18,
     F128 = 5,
     PpcF128 = 6,
+    // TODO: Implement
     Label = 7,
     Int = 8,
     Fun = 9,
     Struct = 10,
+    // TODO: Implement
     Array = 11,
     Ptr = 12,
+    // TODO: Implement
     Vector = 13,
+    // TODO: Implement
     Metadata = 14,
+    // TODO: Implement
     X86Mmx = 15,
+    // TODO: Implement
     Token = 16,
+    // TODO: Implement
     ScalableVector = 17,
+    // TODO: Implement
     X86Amx = 19,
 }

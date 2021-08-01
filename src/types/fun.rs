@@ -1,10 +1,9 @@
 use crate::dorian::Dorian;
 use crate::llvm::types::TypeKind;
-use crate::types::data::TypeData;
-use crate::types::{LlvmType, Type};
+use crate::types::{LlvmType, Type, CreateType};
 use std::marker::PhantomData;
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct FunType<R: Type>(LlvmType, PhantomData<R>);
 
 impl<R: Type> Type for FunType<R> {
@@ -13,6 +12,10 @@ impl<R: Type> Type for FunType<R> {
         Self: Sized,
     {
         FunType(llvm_type, PhantomData::default())
+    }
+
+    fn valid_kinds() -> Vec<TypeKind> where Self: Sized {
+        vec![TypeKind::Fun]
     }
 
     fn get_llvm_type(&self) -> LlvmType {
@@ -24,8 +27,8 @@ impl<R: Type> Type for FunType<R> {
     }
 }
 
-#[derive(Clone)]
-pub struct FunData<'a, R: Type + Copy> {
+#[derive(Debug, Clone)]
+pub struct FunData<'a, R: Type> {
     pub parameters: Vec<&'a dyn Type>,
     pub return_type: &'a R,
     pub is_var_arg: bool,
@@ -46,7 +49,7 @@ impl<'a, R: Type + Copy> FunData<'a, R> {
     }
 }
 
-impl<'a, R: Type + Copy> TypeData for FunData<'a, R> {
+impl<'a, R: Type + Copy> CreateType for FunData<'a, R> {
     type Type = FunType<R>;
 
     #[inline(always)]

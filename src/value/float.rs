@@ -7,7 +7,7 @@ use crate::value::constant::Const;
 use crate::value::data::BuildValue;
 use crate::value::{LlvmValue, Value};
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct FloatValue(LlvmValue, FloatType);
 
 impl Value for FloatValue {

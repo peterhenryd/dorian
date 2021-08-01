@@ -5,8 +5,8 @@ use crate::types::Type;
 use crate::value::data::BuildValue;
 use crate::value::{LlvmValue, Value};
 
-#[derive(Copy, Clone)]
-pub struct PtrValue<V: Value + Copy>(LlvmValue, PtrType<V::Type>, );
+#[derive(Debug, Copy, Clone)]
+pub struct PtrValue<V: Value + Copy + Clone>(LlvmValue, PtrType<V::Type>, );
 
 impl<V: Value + Copy + Clone> Value for PtrValue<V> where V::Type: Copy + Clone {
     type Type = PtrType<V::Type>;
@@ -101,18 +101,18 @@ impl<'a, V: Value + Copy + Clone> BuildValue<'a> for Ptr<'a, V> where V::Type: C
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Deref<'a, V: Value + Copy + Clone>(&'a PtrValue<V>);
 
 impl<'a, V: Value + Copy + Clone> BuildValue<'a> for Deref<'a, V> where V::Type: Copy {
     type Value = V;
 
-    fn build<R: Type>(&self, dorian: &Block<R>) -> Self::Value {
+    fn build<R: Type>(&self, block: &Block<R>) -> Self::Value {
         let val = self.0.get_llvm_value();
 
         unsafe {
             V::new_unchecked(
-                dorian.get_builder().build_load(val, None),
+                block.get_builder().build_load(val, None),
                 V::Type::from_llvm_type_unchecked(
                     val.get_type().get_pointing_type()
                 )

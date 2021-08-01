@@ -3,7 +3,7 @@ use crate::llvm::sys::LLVMValue;
 use crate::llvm::types::Type;
 use std::ptr::NonNull;
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Value(NonNull<LLVMValue>);
 
 impl Value {
