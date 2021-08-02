@@ -2,7 +2,6 @@ use crate::fun::block::Block;
 use crate::llvm::builder::Builder;
 use crate::types::int::IntType;
 use crate::types::Type;
-use crate::value::constant::Const;
 use crate::value::data::BuildValue;
 use crate::value::{LlvmValue, Value};
 
@@ -57,7 +56,6 @@ pub enum UnaOp {
 }
 
 pub enum Int<'a> {
-    Const(Const<'a, IntValue>),
     Bin(BinOp, &'a IntValue, &'a IntValue),
     Una(UnaOp, &'a IntValue),
 }
@@ -67,7 +65,6 @@ impl<'a> BuildValue<'a> for Int<'a> {
 
     fn build<R: Type>(&self, block: &Block<R>) -> Self::Value {
         match self {
-            Int::Const(val) => val.get_inner().clone(),
             Int::Bin(op, lhs, rhs) => {
                 let f = match op {
                     BinOp::Add => Builder::build_add,

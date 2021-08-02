@@ -4,13 +4,18 @@ use crate::types::{LlvmType, Type, CreateType};
 use crate::value::int::IntValue;
 use crate::value::Value;
 use crate::llvm::target::TargetData;
+use crate::value::constant::Const;
 
 #[derive(Debug, Copy, Clone)]
 pub struct IntType(LlvmType);
 
 impl IntType {
-    pub fn const_int(&self, int: u64, sign_extend: bool) -> IntValue {
-        unsafe { IntValue::new_unchecked(self.0.const_int(int, sign_extend), *self) }
+    pub fn const_int(&self, int: u64, sign_extend: bool) -> Const<IntValue> {
+        unsafe {
+            Const::new_unchecked(
+                IntValue::new_unchecked(self.0.const_int(int, sign_extend), *self)
+            )
+        }
     }
 
     pub fn const_int_from_str(&self, str: &str, radix: u8) -> IntValue {

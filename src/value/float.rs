@@ -3,7 +3,6 @@ use crate::llvm::builder::Builder;
 pub use crate::llvm::FloatPredicate as CmpOp;
 use crate::types::float::FloatType;
 use crate::types::Type;
-use crate::value::constant::Const;
 use crate::value::data::BuildValue;
 use crate::value::{LlvmValue, Value};
 
@@ -39,7 +38,6 @@ pub enum UnaOp {
 }
 
 pub enum Float<'a> {
-    Const(Const<'a, FloatValue>),
     Bin(BinOp, &'a FloatValue, &'a FloatValue),
     Cmp(CmpOp, &'a FloatValue, &'a FloatValue),
     Una(UnaOp, &'a FloatValue),
@@ -51,7 +49,6 @@ impl<'a> BuildValue<'a> for Float<'a> {
 
     fn build<R: Type>(&self, block: &Block<R>) -> Self::Value {
         match self {
-            Float::Const(v) => v.get_inner().clone(),
             Float::Bin(op, lhs, rhs) => {
                 let f = match op {
                     BinOp::Add => Builder::build_f_add,
