@@ -21,6 +21,7 @@ impl<'a> Module<'a> {
         unsafe { Fun::new(self.0, self.1.add_fun(name, fun_type.get_llvm_type())) }
     }
 
+    #[inline(always)]
     pub fn create_execution_engine(
         &self,
         optimization_level: OptimizationLevel,
