@@ -1,5 +1,7 @@
 # Dorian
 
+🚧 Disclaimer! Dorian is a BIG work-in-progress; use with caution.
+
 The intuitive LLVM abstraction written in Rust.
 
 ```rs
