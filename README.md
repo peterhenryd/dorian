@@ -2,7 +2,7 @@
 
 🚧 Disclaimer! Dorian is a BIG work-in-progress; use with caution.
 
-The intuitive LLVM abstraction written in Rust.
+Dorian is an intuitive high-level abstraction for LLVM, written in Rust with only one dependency (LLVM!).
 
 ```rs
 use crate::dorian::Dorian;
