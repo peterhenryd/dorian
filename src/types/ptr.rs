@@ -4,6 +4,7 @@ use crate::llvm::AddressSpace;
 use crate::types::{LlvmType, Type, CreateType};
 use std::marker::PhantomData;
 
+/// Represents a pointer type.
 #[derive(Debug, Copy, Clone)]
 pub struct PtrType<T: Type>(LlvmType, PhantomData<T>);
 
@@ -35,6 +36,7 @@ impl<T: Type> PtrType<T> {
     }
 }
 
+/// Builder for pointer type.
 #[derive(Debug, Copy, Clone)]
 pub struct PtrData<T: Type>(T, AddressSpace);
 

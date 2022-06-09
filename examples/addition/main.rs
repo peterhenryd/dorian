@@ -1,15 +1,14 @@
-use crate::dorian::Dorian;
-use crate::llvm::execution_engine::ExtFn;
-use crate::llvm::OptimizationLevel;
-use crate::types::fun::FunData;
-use crate::types::int::IntData;
-use crate::value::data::BuildValue;
-use crate::value::int::{BinOp, Int};
-use crate::value::Value;
-use crate::types::CreateType;
+use dorian::dorian::Dorian;
+use dorian::llvm::execution_engine::ExtFn;
+use dorian::llvm::OptimizationLevel;
+use dorian::types::CreateType;
+use dorian::types::fun::FunData;
+use dorian::types::int::IntData;
+use dorian::value::data::BuildValue;
+use dorian::value::int::{BinOp, Int};
+use dorian::value::Value;
 
-#[test]
-fn test() {
+fn main() {
     let dorian = Dorian::new();
 
     let mut test = dorian.create_module("test");

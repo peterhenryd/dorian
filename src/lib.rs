@@ -4,4 +4,3 @@ pub mod llvm;
 pub mod module;
 pub mod types;
 pub mod value;
-#[cfg(test)] mod tests;

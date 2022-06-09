@@ -10,19 +10,23 @@ use crate::llvm::sys::prelude::LLVMBool;
 use crate::llvm::sys::*;
 use crate::llvm::value::Value;
 
+/// Encapsulates the [LLVMBuilder] and its functions.
 pub struct Builder(NonNull<LLVMBuilder>);
 
 impl Builder {
+    /// Creates a [Builder] from an [LLVMBuilder].
     #[inline]
     pub fn from_raw(raw: NonNull<LLVMBuilder>) -> Builder {
         Builder(raw)
     }
 
+    /// Borrow the internal [LLVMBuilder].
     #[inline]
     pub fn as_raw(&self) -> NonNull<LLVMBuilder> {
         self.0
     }
 
+    // TODO: explain what this does
     pub fn position_at_end(&self, block: &BasicBlock) {
         unsafe {
             LLVMPositionBuilderAtEnd(self.0.as_ptr(), block.as_raw().as_ptr());
@@ -319,23 +323,23 @@ impl Builder {
         )))
     }
 
-    pub unsafe fn build_malloc(&self, r#type: Type, name: Option<&str>) -> Value {
+    pub unsafe fn build_malloc(&self, ty: Type, name: Option<&str>) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildMalloc(
             self.0.as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
 
     pub unsafe fn build_array_malloc(
         &self,
-        r#type: Type,
+        ty: Type,
         value: Value,
         name: Option<&str>,
     ) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildArrayMalloc(
             self.0.as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             value.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
@@ -387,18 +391,18 @@ impl Builder {
         )))
     }
 
-    pub unsafe fn build_alloca(&self, r#type: Type, name: Option<&str>) -> Value {
+    pub unsafe fn build_alloca(&self, ty: Type, name: Option<&str>) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildAlloca(
             self.0.as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
 
-    pub unsafe fn build_array_alloca(&self, r#type: Type, len: Value, name: Option<&str>) -> Value {
+    pub unsafe fn build_array_alloca(&self, ty: Type, len: Value, name: Option<&str>) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildArrayAlloca(
             self.0.as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             len.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
@@ -411,18 +415,10 @@ impl Builder {
         )))
     }
 
-    pub unsafe fn build_load(&self, ptr: Value, name: Option<&str>) -> Value {
-        Value::from_raw(NonNull::new_unchecked(LLVMBuildLoad(
-            self.0.as_ptr(),
-            ptr.as_raw().as_ptr(),
-            to_c_string(name).as_ptr(),
-        )))
-    }
-
-    pub unsafe fn build_load_2(&self, r#type: Type, ptr: Value, name: Option<&str>) -> Value {
+    pub unsafe fn build_load(&self, ty: Type, ptr: Value, name: Option<&str>) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildLoad2(
             self.0.as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             ptr.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
@@ -436,11 +432,12 @@ impl Builder {
         )))
     }
 
-    pub unsafe fn build_gep(&self, ptr: Value, indices: Vec<Value>, name: Option<&str>) -> Value {
+    pub unsafe fn build_gep(&self, ty: Type, ptr: Value, indices: Vec<Value>, name: Option<&str>) -> Value {
         let len = indices.len();
 
-        Value::from_raw(NonNull::new_unchecked(LLVMBuildGEP(
+        Value::from_raw(NonNull::new_unchecked(LLVMBuildGEP2(
             self.0.as_ptr(),
+            ty.as_raw().as_ptr(),
             ptr.as_raw().as_ptr(),
             indices
                 .into_iter()
@@ -454,61 +451,7 @@ impl Builder {
 
     pub unsafe fn build_in_bounds_gep(
         &self,
-        ptr: Value,
-        indices: Vec<Value>,
-        name: Option<&str>,
-    ) -> Value {
-        let len = indices.len();
-
-        Value::from_raw(NonNull::new_unchecked(LLVMBuildInBoundsGEP(
-            self.0.as_ptr(),
-            ptr.as_raw().as_ptr(),
-            indices
-                .into_iter()
-                .map(|value| value.as_raw().as_ptr())
-                .collect::<Vec<_>>()
-                .as_mut_ptr(),
-            len as u32,
-            to_c_string(name).as_ptr(),
-        )))
-    }
-
-    // TODO: soundness?
-    pub unsafe fn build_struct_gep(&self, ptr: Value, index: u32, name: Option<&str>) -> Value {
-        Value::from_raw(NonNull::new_unchecked(LLVMBuildStructGEP(
-            self.0.as_ptr(),
-            ptr.as_raw().as_ptr(),
-            index,
-            to_c_string(name).as_ptr(),
-        )))
-    }
-
-    pub unsafe fn build_gep_2(
-        &self,
-        r#type: Type,
-        ptr: Value,
-        indices: Vec<Value>,
-        name: Option<&str>,
-    ) -> Value {
-        let len = indices.len();
-
-        Value::from_raw(NonNull::new_unchecked(LLVMBuildGEP2(
-            self.0.as_ptr(),
-            r#type.as_raw().as_ptr(),
-            ptr.as_raw().as_ptr(),
-            indices
-                .into_iter()
-                .map(|value| value.as_raw().as_ptr())
-                .collect::<Vec<_>>()
-                .as_mut_ptr(),
-            len as u32,
-            to_c_string(name).as_ptr(),
-        )))
-    }
-
-    pub unsafe fn build_in_bounds_gep_2(
-        &self,
-        r#type: Type,
+        ty: Type,
         ptr: Value,
         indices: Vec<Value>,
         name: Option<&str>,
@@ -517,7 +460,7 @@ impl Builder {
 
         Value::from_raw(NonNull::new_unchecked(LLVMBuildInBoundsGEP2(
             self.0.as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             ptr.as_raw().as_ptr(),
             indices
                 .into_iter()
@@ -525,22 +468,6 @@ impl Builder {
                 .collect::<Vec<_>>()
                 .as_mut_ptr(),
             len as u32,
-            to_c_string(name).as_ptr(),
-        )))
-    }
-
-    pub unsafe fn build_struct_gep_2(
-        &self,
-        r#type: Type,
-        ptr: Value,
-        index: u32,
-        name: Option<&str>,
-    ) -> Value {
-        Value::from_raw(NonNull::new_unchecked(LLVMBuildStructGEP2(
-            self.0.as_ptr(),
-            r#type.as_raw().as_ptr(),
-            ptr.as_raw().as_ptr(),
-            index,
             to_c_string(name).as_ptr(),
         )))
     }
@@ -561,110 +488,110 @@ impl Builder {
         )))
     }
 
-    pub unsafe fn build_trunc(&self, value: Value, r#type: Type, name: Option<&str>) -> Value {
+    pub unsafe fn build_trunc(&self, value: Value, ty: Type, name: Option<&str>) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildTrunc(
             self.0.as_ptr(),
             value.as_raw().as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
 
-    pub unsafe fn build_z_ext(&self, value: Value, r#type: Type, name: Option<&str>) -> Value {
+    pub unsafe fn build_z_ext(&self, value: Value, ty: Type, name: Option<&str>) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildZExt(
             self.0.as_ptr(),
             value.as_raw().as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
 
-    pub unsafe fn build_s_ext(&self, value: Value, r#type: Type, name: Option<&str>) -> Value {
+    pub unsafe fn build_s_ext(&self, value: Value, ty: Type, name: Option<&str>) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildSExt(
             self.0.as_ptr(),
             value.as_raw().as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
 
-    pub unsafe fn build_fp_to_ui(&self, value: Value, r#type: Type, name: Option<&str>) -> Value {
+    pub unsafe fn build_fp_to_ui(&self, value: Value, ty: Type, name: Option<&str>) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildFPToUI(
             self.0.as_ptr(),
             value.as_raw().as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
 
-    pub unsafe fn build_fp_to_si(&self, value: Value, r#type: Type, name: Option<&str>) -> Value {
+    pub unsafe fn build_fp_to_si(&self, value: Value, ty: Type, name: Option<&str>) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildFPToSI(
             self.0.as_ptr(),
             value.as_raw().as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
 
-    pub unsafe fn build_ui_to_fp(&self, value: Value, r#type: Type, name: Option<&str>) -> Value {
+    pub unsafe fn build_ui_to_fp(&self, value: Value, ty: Type, name: Option<&str>) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildUIToFP(
             self.0.as_ptr(),
             value.as_raw().as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
 
-    pub unsafe fn build_si_to_fp(&self, value: Value, r#type: Type, name: Option<&str>) -> Value {
+    pub unsafe fn build_si_to_fp(&self, value: Value, ty: Type, name: Option<&str>) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildSIToFP(
             self.0.as_ptr(),
             value.as_raw().as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
 
-    pub unsafe fn build_fp_trunc(&self, value: Value, r#type: Type, name: Option<&str>) -> Value {
+    pub unsafe fn build_fp_trunc(&self, value: Value, ty: Type, name: Option<&str>) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildFPTrunc(
             self.0.as_ptr(),
             value.as_raw().as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
 
-    pub unsafe fn build_fp_ext(&self, value: Value, r#type: Type, name: Option<&str>) -> Value {
+    pub unsafe fn build_fp_ext(&self, value: Value, ty: Type, name: Option<&str>) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildFPExt(
             self.0.as_ptr(),
             value.as_raw().as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
 
-    pub unsafe fn build_ptr_to_int(&self, value: Value, r#type: Type, name: Option<&str>) -> Value {
+    pub unsafe fn build_ptr_to_int(&self, value: Value, ty: Type, name: Option<&str>) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildPtrToInt(
             self.0.as_ptr(),
             value.as_raw().as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
 
-    pub unsafe fn build_int_to_ptr(&self, value: Value, r#type: Type, name: Option<&str>) -> Value {
+    pub unsafe fn build_int_to_ptr(&self, value: Value, ty: Type, name: Option<&str>) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildIntToPtr(
             self.0.as_ptr(),
             value.as_raw().as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
 
-    pub unsafe fn build_bit_cast(&self, value: Value, r#type: Type, name: Option<&str>) -> Value {
+    pub unsafe fn build_bit_cast(&self, value: Value, ty: Type, name: Option<&str>) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildBitCast(
             self.0.as_ptr(),
             value.as_raw().as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
@@ -672,13 +599,13 @@ impl Builder {
     pub unsafe fn build_addr_space_cast(
         &self,
         value: Value,
-        r#type: Type,
+        ty: Type,
         name: Option<&str>,
     ) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildAddrSpaceCast(
             self.0.as_ptr(),
             value.as_raw().as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
@@ -686,13 +613,13 @@ impl Builder {
     pub unsafe fn build_z_ext_or_bit_cast(
         &self,
         value: Value,
-        r#type: Type,
+        ty: Type,
         name: Option<&str>,
     ) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildZExtOrBitCast(
             self.0.as_ptr(),
             value.as_raw().as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
@@ -700,13 +627,13 @@ impl Builder {
     pub unsafe fn build_s_ext_or_bit_cast(
         &self,
         value: Value,
-        r#type: Type,
+        ty: Type,
         name: Option<&str>,
     ) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildSExtOrBitCast(
             self.0.as_ptr(),
             value.as_raw().as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
@@ -714,13 +641,13 @@ impl Builder {
     pub unsafe fn build_trunc_or_bit_cast(
         &self,
         value: Value,
-        r#type: Type,
+        ty: Type,
         name: Option<&str>,
     ) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildTruncOrBitCast(
             self.0.as_ptr(),
             value.as_raw().as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
@@ -729,32 +656,32 @@ impl Builder {
         &self,
         op: Opcode,
         value: Value,
-        r#type: Type,
+        ty: Type,
         name: Option<&str>,
     ) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildCast(
             self.0.as_ptr(),
             std::mem::transmute(op),
             value.as_raw().as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
 
-    pub unsafe fn build_ptr_cast(&self, value: Value, r#type: Type, name: Option<&str>) -> Value {
+    pub unsafe fn build_ptr_cast(&self, value: Value, ty: Type, name: Option<&str>) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildPointerCast(
             self.0.as_ptr(),
             value.as_raw().as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
 
-    pub unsafe fn build_int_cast(&self, value: Value, r#type: Type, name: Option<&str>) -> Value {
+    pub unsafe fn build_int_cast(&self, value: Value, ty: Type, name: Option<&str>) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildIntCast(
             self.0.as_ptr(),
             value.as_raw().as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
@@ -762,24 +689,24 @@ impl Builder {
     pub unsafe fn build_int_cast_2(
         &self,
         value: Value,
-        r#type: Type,
+        ty: Type,
         is_signed: bool,
         name: Option<&str>,
     ) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildIntCast2(
             self.0.as_ptr(),
             value.as_raw().as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             is_signed as LLVMBool,
             to_c_string(name).as_ptr(),
         )))
     }
 
-    pub unsafe fn build_fp_cast(&self, value: Value, r#type: Type, name: Option<&str>) -> Value {
+    pub unsafe fn build_fp_cast(&self, value: Value, ty: Type, name: Option<&str>) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildFPCast(
             self.0.as_ptr(),
             value.as_raw().as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
@@ -816,37 +743,17 @@ impl Builder {
         )))
     }
 
-    pub unsafe fn build_phi(&self, r#type: Type, name: Option<&str>) -> Value {
+    pub unsafe fn build_phi(&self, ty: Type, name: Option<&str>) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildPhi(
             self.0.as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
 
     pub unsafe fn build_call(
         &self,
-        fun: Value,
-        args: impl Iterator<Item = Value> + ExactSizeIterator,
-        name: Option<&str>,
-    ) -> Value {
-        let len = args.len();
-
-        Value::from_raw(NonNull::new_unchecked(LLVMBuildCall(
-            self.0.as_ptr(),
-            fun.as_raw().as_ptr(),
-            args.into_iter()
-                .map(|value| value.as_raw().as_ptr())
-                .collect::<Vec<_>>()
-                .as_mut_ptr(),
-            len as u32,
-            to_c_string(name).as_ptr(),
-        )))
-    }
-
-    pub unsafe fn build_call_2(
-        &self,
-        r#type: Type,
+        ty: Type,
         fun: Value,
         args: Vec<Value>,
         name: Option<&str>,
@@ -855,7 +762,7 @@ impl Builder {
 
         Value::from_raw(NonNull::new_unchecked(LLVMBuildCall2(
             self.0.as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             fun.as_raw().as_ptr(),
             args.into_iter()
                 .map(|value| value.as_raw().as_ptr())
@@ -882,11 +789,11 @@ impl Builder {
         )))
     }
 
-    pub unsafe fn build_va_arg(&self, vector: Value, r#type: Type, name: Option<&str>) -> Value {
+    pub unsafe fn build_va_arg(&self, vector: Value, ty: Type, name: Option<&str>) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildVAArg(
             self.0.as_ptr(),
             vector.as_raw().as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
         )))
     }
@@ -991,9 +898,10 @@ impl Builder {
         )))
     }
 
-    pub unsafe fn build_ptr_diff(&self, lhs: Value, rhs: Value, name: Option<&str>) -> Value {
-        Value::from_raw(NonNull::new_unchecked(LLVMBuildPtrDiff(
+    pub unsafe fn build_ptr_diff(&self, ty: Type, lhs: Value, rhs: Value, name: Option<&str>) -> Value {
+        Value::from_raw(NonNull::new_unchecked(LLVMBuildPtrDiff2(
             self.0.as_ptr(),
+            ty.as_raw().as_ptr(),
             lhs.as_raw().as_ptr(),
             rhs.as_raw().as_ptr(),
             to_c_string(name).as_ptr(),
@@ -1112,7 +1020,8 @@ impl Builder {
 
     pub unsafe fn build_invoke(
         &self,
-        r#fn: Value,
+        ty: Type,
+        fun: Value,
         args: Vec<Value>,
         then: BasicBlock,
         catch: BasicBlock,
@@ -1120,9 +1029,10 @@ impl Builder {
     ) -> Value {
         let len = args.len();
 
-        Value::from_raw(NonNull::new_unchecked(LLVMBuildInvoke(
+        Value::from_raw(NonNull::new_unchecked(LLVMBuildInvoke2(
             self.0.as_ptr(),
-            r#fn.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
+            fun.as_raw().as_ptr(),
             args.into_iter()
                 .map(|value| value.as_raw().as_ptr())
                 .collect::<Vec<_>>()
@@ -1136,7 +1046,7 @@ impl Builder {
 
     pub unsafe fn build_invoke_2(
         &self,
-        r#type: Type,
+        ty: Type,
         r#fn: Value,
         args: Vec<Value>,
         then: BasicBlock,
@@ -1147,7 +1057,7 @@ impl Builder {
 
         Value::from_raw(NonNull::new_unchecked(LLVMBuildInvoke2(
             self.0.as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             r#fn.as_raw().as_ptr(),
             args.into_iter()
                 .map(|value| value.as_raw().as_ptr())
@@ -1175,14 +1085,14 @@ impl Builder {
 
     pub unsafe fn build_landing_pad(
         &self,
-        r#type: Type,
+        ty: Type,
         pers_fn: Value,
         clauses: u32,
         name: Option<&str>,
     ) -> Value {
         Value::from_raw(NonNull::new_unchecked(LLVMBuildLandingPad(
             self.0.as_ptr(),
-            r#type.as_raw().as_ptr(),
+            ty.as_raw().as_ptr(),
             pers_fn.as_raw().as_ptr(),
             clauses,
             to_c_string(name).as_ptr(),

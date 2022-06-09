@@ -3,6 +3,7 @@ use crate::llvm::types::TypeKind;
 use crate::types::{LlvmType, Type, CreateType};
 use std::marker::PhantomData;
 
+/// Represents a function type.
 #[derive(Debug, Copy, Clone)]
 pub struct FunType<R: Type>(LlvmType, PhantomData<R>);
 
@@ -27,6 +28,7 @@ impl<R: Type> Type for FunType<R> {
     }
 }
 
+/// Builder for function type.
 #[derive(Debug, Clone)]
 pub struct FunData<'a, R: Type> {
     pub parameters: Vec<&'a dyn Type>,

@@ -112,8 +112,8 @@ impl<'a, V: Value + Copy + Clone> BuildValue<'a> for Deref<'a, V> where V::Type:
 
         unsafe {
             V::new_unchecked(
-                block.get_builder().build_load(val, None),
-                V::Type::from_llvm_type_unchecked(
+                block.get_builder().build_load(val.get_type(), val, None),
+                Type::from_llvm_type_unchecked(
                     val.get_type().get_pointing_type()
                 )
             )

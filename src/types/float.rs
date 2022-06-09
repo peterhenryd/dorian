@@ -3,6 +3,7 @@ use crate::llvm::context::Context;
 use crate::llvm::types::TypeKind;
 use crate::types::{LlvmType, Type, CreateType};
 
+/// Represents a floating-point type.
 #[derive(Debug, Copy, Clone)]
 pub struct FloatType(LlvmType);
 
@@ -32,6 +33,7 @@ impl Type for FloatType {
     }
 }
 
+/// Represents a kind of floating-point.
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub enum FloatData {

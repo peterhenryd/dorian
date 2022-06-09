@@ -1,12 +1,10 @@
 [package]
 name = "dorian"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2018"
 description = "The intuitive LLVM abstraction written in Rust."
 license-file = "LICENSE"
 homepage = "https://github.com/peterhenryd/dorian"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-llvm-sys = "120.1.0"
+llvm-sys = "140.0.2"

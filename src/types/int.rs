@@ -6,6 +6,7 @@ use crate::value::Value;
 use crate::llvm::target::TargetData;
 use crate::value::constant::Const;
 
+/// Represents an integer type.
 #[derive(Debug, Copy, Clone)]
 pub struct IntType(LlvmType);
 
@@ -41,6 +42,7 @@ impl Type for IntType {
     }
 }
 
+/// Builder for integer type.
 #[derive(Debug, Copy, Clone)]
 pub enum IntData<'a> {
     Bits(u32),

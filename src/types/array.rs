@@ -3,6 +3,7 @@ use crate::llvm::types::TypeKind;
 use crate::dorian::Dorian;
 use std::marker::PhantomData;
 
+/// Represents an array type.
 #[derive(Debug, Copy, Clone)]
 pub struct ArrayType<T: Type>(LlvmType, PhantomData<T>);
 
@@ -26,6 +27,7 @@ impl<T: Type> Type for ArrayType<T> {
     }
 }
 
+/// Builder for array type.
 #[derive(Copy, Clone)]
 pub struct ArrayData<T: Type + Copy + Clone>(T, u32);
 

@@ -4,43 +4,24 @@
 
 Dorian is an intuitive high-level abstraction for LLVM, written in Rust with only one dependency (LLVM!).
 
-```rs
-use crate::dorian::Dorian;
-use crate::llvm::execution_engine::ExtFn;
-use crate::llvm::OptimizationLevel;
-use crate::types::data::TypeData;
-use crate::types::fun::FunData;
-use crate::types::int::IntData;
-use crate::value::data::BuildValue;
-use crate::value::int::{BinOp, Int};
-use crate::value::Value;
+### What it does
 
-#[test]
-fn test() {
-    let dorian = Dorian::new();
+Dorian takes the very complex library, LLVM, and boils it down
+to concepts that are familiar with everyday programmers.
 
-    let mut test = dorian.create_module("test");
+Streamline the development of your programming language or
+any other project, and severely reduce the amount of unnecessary
+boilerplate with Dorian!
 
-    let i64 = IntData::Bits(64).create(&dorian);
-    let fun_type = FunData::new(vec![&i64, &i64], &i64, false).create(&dorian);
+### How to contribute
+Currently, the project is riddled with little adequately-descriptive 
+TODOs everywhere. 
 
-    let mut fun = test.add_fn("add", &fun_type);
+Feel free to fix an issue that any TODO addresses, and open
+ a pull request.
 
-    let mut entry = fun.add_block("entry");
-    if let [lhs, rhs] = fun.fetch_params().as_slice() {
-        let lhs = lhs.as_int_value().unwrap();
-        let rhs = rhs.as_int_value().unwrap();
+### How to use 
 
-        let result = Int::Bin(BinOp::Add, &lhs, &rhs).build(&entry);
+Grab the latest version on [crates.io](https://crates.io/crates/dorian)!
 
-        entry.return_value(&result);
-    }
-
-    println!("{}", test.to_string());
-
-    let engine = test.create_execution_engine(OptimizationLevel::Aggressive);
-    let add = engine.get_fun::<ExtFn<(i64, i64), i64>>("add").unwrap();
-
-    assert_eq!(unsafe { add(5, 4) }, 9);
-}
-```
+There's also some [examples](./examples) in this repository.

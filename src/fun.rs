@@ -8,17 +8,21 @@ use crate::value::any::AnyValue;
 use crate::value::Value;
 use std::marker::PhantomData;
 
+/// This structure represents a function in the context of a module.
 pub struct Fun<'a, R: Type>(&'a Dorian, LlvmFun<'a>, PhantomData<R>);
 
 impl<'a, R: Type> Fun<'a, R> {
+    /// Creates a function from an [LlvmFun].
     pub unsafe fn new(dorian: &'a Dorian, llvm_fun: LlvmFun<'a>) -> Fun<'a, R> {
         Fun(dorian, llvm_fun, PhantomData::default())
     }
 
+    /// Borrow the internal [LlvmFun].
     pub fn get_inner(&self) -> &LlvmFun<'a> {
         &self.1
     }
 
+    /// Add a named block to the function.
     pub fn add_block(&mut self, name: &str) -> Block<'a, R> {
         Block::new(
             self.0,
@@ -27,6 +31,7 @@ impl<'a, R: Type> Fun<'a, R> {
         )
     }
 
+    /// Returns the values inputted when the function is called.
     pub fn fetch_params(&self) -> Vec<AnyValue> {
         self.1
             .get_params()

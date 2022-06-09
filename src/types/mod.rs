@@ -13,27 +13,34 @@ pub mod ptr;
 pub mod structure;
 pub mod array;
 
+/// Represents a type that a value has.
 pub trait Type: Debug {
+    /// Creates a type from an [LlvmType].
     unsafe fn from_llvm_type_unchecked(llvm_type: LlvmType) -> Self
     where
         Self: Sized;
 
+    // TODO: remember what this is for
     fn valid_kinds() -> Vec<TypeKind>
     where
         Self: Sized;
 
+    /// Borrow the internal [LlvmType].
     fn get_llvm_type(&self) -> LlvmType;
 
+    /// Get the LLVM enumerable type that is represented by the implementation.
     fn get_kind(&self) -> TypeKind;
 
+    /// Will return an [IntType] if the [Type] is an underlying integer type.
     fn as_int_type(&self) -> Option<IntType> {
         if let TypeKind::Int = self.get_kind() {
-            Some(unsafe { IntType::from_llvm_type_unchecked(self.get_llvm_type()) })
-        } else {
-            None
+            return Some(unsafe { IntType::from_llvm_type_unchecked(self.get_llvm_type()) });
         }
+
+        None
     }
 
+    /// Will return an [PtrType<T>] if the [Type] is an underlying pointer type.
     fn as_ptr_type<T: Type>(&self) -> Option<PtrType<T>> where Self: Sized {
         if let TypeKind::Ptr = self.get_kind() {
             let ptr = unsafe {
@@ -53,6 +60,8 @@ pub trait Type: Debug {
     }
 }
 
+/// Encapsulates a raw [LlvmType] that is not defined at compile-time.
+// TODO: is this struct ethical?
 #[derive(Debug, Copy, Clone)]
 pub struct Raw(LlvmType, TypeKind);
 
@@ -98,8 +107,11 @@ impl Type for Raw {
     }
 }
 
+/// Builder for easily creating types.
 pub trait CreateType: Clone {
+    /// The [Type] being built.
     type Type: Type;
 
+    /// Builds the [Type].
     fn create(self, dorian: &Dorian) -> Self::Type;
 }

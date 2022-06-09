@@ -2,6 +2,7 @@ use crate::types::{Type, CreateType, LlvmType};
 use crate::dorian::Dorian;
 use crate::llvm::types::TypeKind;
 
+/// Represents an anonymous structure.
 #[derive(Debug, Copy, Clone)]
 pub struct Struct<'a> {
     fields: &'a [&'a dyn Type],
@@ -40,6 +41,7 @@ impl<'a> CreateType for Struct<'a> {
     }
 }
 
+/// Represents a permanent structure type with a name.
 #[derive(Debug, Copy, Clone)]
 pub struct NamedStruct<'a> {
     r#struct: Struct<'a>,
@@ -64,6 +66,7 @@ impl<'a> CreateType for NamedStruct<'a> {
     }
 }
 
+/// Represents a structure type.
 #[derive(Debug, Copy, Clone)]
 pub struct StructType(LlvmType);
 

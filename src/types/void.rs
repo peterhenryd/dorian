@@ -2,6 +2,7 @@ use crate::types::{LlvmType, CreateType, Type};
 use crate::dorian::Dorian;
 use crate::llvm::types::TypeKind;
 
+/// Represents the void type (type with no possible values).
 #[derive(Debug, Copy, Clone)]
 pub struct VoidType(LlvmType);
 
@@ -23,6 +24,7 @@ impl Type for VoidType {
     }
 }
 
+/// Builder for void type.
 #[derive(Debug, Copy, Clone)]
 pub struct VoidData;
 
