@@ -31,7 +31,7 @@ pub trait Type: Debug {
     /// Get the LLVM enumerable type that is represented by the implementation.
     fn get_kind(&self) -> TypeKind;
 
-    /// Will return an [IntType] if the [Type] is an underlying integer type.
+    /// Will return a [Some] of an [IntType] if the [Type] is an underlying integer type.
     fn as_int_type(&self) -> Option<IntType> {
         if let TypeKind::Int = self.get_kind() {
             return Some(unsafe { IntType::from_llvm_type_unchecked(self.get_llvm_type()) });
@@ -40,7 +40,7 @@ pub trait Type: Debug {
         None
     }
 
-    /// Will return an [PtrType<T>] if the [Type] is an underlying pointer type.
+    /// Will return a [Some] of a [PtrType<T>] if the [Type] is an underlying pointer type.
     fn as_ptr_type<T: Type>(&self) -> Option<PtrType<T>> where Self: Sized {
         if let TypeKind::Ptr = self.get_kind() {
             let ptr = unsafe {

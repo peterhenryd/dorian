@@ -1170,6 +1170,691 @@ impl Builder {
             to_c_string(name).as_ptr(),
         )))
     }
+
+
+    pub fn LLVMCreateBuilderInContext(C: LLVMContextRef) -> LLVMBuilderRef;
+    pub fn LLVMCreateBuilder() -> LLVMBuilderRef;
+    pub fn LLVMPositionBuilder(
+        Builder: LLVMBuilderRef,
+        Block: LLVMBasicBlockRef,
+        Instr: LLVMValueRef,
+    );
+    pub fn LLVMPositionBuilderBefore(Builder: LLVMBuilderRef, Instr: LLVMValueRef);
+    pub fn LLVMPositionBuilderAtEnd(Builder: LLVMBuilderRef, Block: LLVMBasicBlockRef);
+    pub fn LLVMGetInsertBlock(Builder: LLVMBuilderRef) -> LLVMBasicBlockRef;
+    pub fn LLVMClearInsertionPosition(Builder: LLVMBuilderRef);
+    pub fn LLVMInsertIntoBuilder(Builder: LLVMBuilderRef, Instr: LLVMValueRef);
+    pub fn LLVMInsertIntoBuilderWithName(
+        Builder: LLVMBuilderRef,
+        Instr: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    );
+    pub fn LLVMDisposeBuilder(Builder: LLVMBuilderRef);
+
+    // Metadata
+    /// Get location information used by debugging information.
+    pub fn LLVMGetCurrentDebugLocation2(Builder: LLVMBuilderRef) -> LLVMMetadataRef;
+    /// Set location information used by debugging information.
+    pub fn LLVMSetCurrentDebugLocation2(Builder: LLVMBuilderRef, Loc: LLVMMetadataRef);
+    /// Attempts to set the debug location for the given instruction using the
+    /// current debug location for the given builder.  If the builder has no current
+    /// debug location, this function is a no-op.
+    #[deprecated(
+    since = "14.0",
+    note = "Deprecated in favor of the more general LLVMAddMetadataToInst."
+    )]
+    pub fn LLVMSetInstDebugLocation(Builder: LLVMBuilderRef, Inst: LLVMValueRef);
+    /// Adds the metadata registered with the given builder to the given instruction.
+    pub fn LLVMAddMetadataToInst(Builder: LLVMBuilderRef, Inst: LLVMValueRef);
+    /// Get the dafult floating-point math metadata for a given builder.
+    pub fn LLVMBuilderGetDefaultFPMathTag(Builder: LLVMBuilderRef) -> LLVMMetadataRef;
+    /// Set the default floating-point math metadata for the given builder.
+    pub fn LLVMBuilderSetDefaultFPMathTag(Builder: LLVMBuilderRef, FPMathTag: LLVMMetadataRef);
+    #[deprecated(since = "LLVM 9.0", note = "Use LLVMGetCurrentDebugLocation2 instead.")]
+    pub fn LLVMSetCurrentDebugLocation(Builder: LLVMBuilderRef, L: LLVMValueRef);
+    pub fn LLVMGetCurrentDebugLocation(Builder: LLVMBuilderRef) -> LLVMValueRef;
+
+    // Terminators
+    pub fn LLVMBuildRetVoid(arg1: LLVMBuilderRef) -> LLVMValueRef;
+    pub fn LLVMBuildRet(arg1: LLVMBuilderRef, V: LLVMValueRef) -> LLVMValueRef;
+    pub fn LLVMBuildAggregateRet(
+        arg1: LLVMBuilderRef,
+        RetVals: *mut LLVMValueRef,
+        N: ::libc::c_uint,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildBr(arg1: LLVMBuilderRef, Dest: LLVMBasicBlockRef) -> LLVMValueRef;
+    pub fn LLVMBuildCondBr(
+        arg1: LLVMBuilderRef,
+        If: LLVMValueRef,
+        Then: LLVMBasicBlockRef,
+        Else: LLVMBasicBlockRef,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildSwitch(
+        arg1: LLVMBuilderRef,
+        V: LLVMValueRef,
+        Else: LLVMBasicBlockRef,
+        NumCases: ::libc::c_uint,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildIndirectBr(
+        B: LLVMBuilderRef,
+        Addr: LLVMValueRef,
+        NumDests: ::libc::c_uint,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildInvoke2(
+        arg1: LLVMBuilderRef,
+        Ty: LLVMTypeRef,
+        Fn: LLVMValueRef,
+        Args: *mut LLVMValueRef,
+        NumArgs: ::libc::c_uint,
+        Then: LLVMBasicBlockRef,
+        Catch: LLVMBasicBlockRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildUnreachable(B: LLVMBuilderRef) -> LLVMValueRef;
+
+    pub fn LLVMBuildResume(B: LLVMBuilderRef, Exn: LLVMValueRef) -> LLVMValueRef;
+    pub fn LLVMBuildLandingPad(
+        B: LLVMBuilderRef,
+        Ty: LLVMTypeRef,
+        PersFn: LLVMValueRef,
+        NumClauses: ::libc::c_uint,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildCleanupRet(
+        B: LLVMBuilderRef,
+        CatchPad: LLVMValueRef,
+        BB: LLVMBasicBlockRef,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildCatchRet(
+        B: LLVMBuilderRef,
+        CatchPad: LLVMValueRef,
+        BB: LLVMBasicBlockRef,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildCatchPad(
+        B: LLVMBuilderRef,
+        ParentPad: LLVMValueRef,
+        Args: *mut LLVMValueRef,
+        NumArgs: ::libc::c_uint,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildCleanupPad(
+        B: LLVMBuilderRef,
+        ParentPad: LLVMValueRef,
+        Args: *mut LLVMValueRef,
+        NumArgs: ::libc::c_uint,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildCatchSwitch(
+        B: LLVMBuilderRef,
+        ParentPad: LLVMValueRef,
+        UnwindBB: LLVMBasicBlockRef,
+        NumHandler: ::libc::c_uint,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+
+
+    pub fn LLVMBuildAdd(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildNSWAdd(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildNUWAdd(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildFAdd(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildSub(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildNSWSub(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildNUWSub(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildFSub(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildMul(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildNSWMul(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildNUWMul(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildFMul(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildUDiv(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildExactUDiv(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildSDiv(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildExactSDiv(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildFDiv(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildURem(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildSRem(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildFRem(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildShl(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildLShr(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildAShr(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildAnd(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildOr(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildXor(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildBinOp(
+        B: LLVMBuilderRef,
+        Op: LLVMOpcode,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildNeg(
+        arg1: LLVMBuilderRef,
+        V: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildNSWNeg(
+        B: LLVMBuilderRef,
+        V: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildNUWNeg(
+        B: LLVMBuilderRef,
+        V: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildFNeg(
+        arg1: LLVMBuilderRef,
+        V: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildNot(
+        arg1: LLVMBuilderRef,
+        V: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+
+    // Memory
+    pub fn LLVMBuildMalloc(
+        arg1: LLVMBuilderRef,
+        Ty: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildArrayMalloc(
+        arg1: LLVMBuilderRef,
+        Ty: LLVMTypeRef,
+        Val: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildMemSet(
+        B: LLVMBuilderRef,
+        Ptr: LLVMValueRef,
+        Val: LLVMValueRef,
+        Len: LLVMValueRef,
+        Align: ::libc::c_uint,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildMemCpy(
+        B: LLVMBuilderRef,
+        Dst: LLVMValueRef,
+        DstAlign: ::libc::c_uint,
+        Src: LLVMValueRef,
+        SrcAlign: ::libc::c_uint,
+        Size: LLVMValueRef,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildMemMove(
+        B: LLVMBuilderRef,
+        Dst: LLVMValueRef,
+        DstAlign: ::libc::c_uint,
+        Src: LLVMValueRef,
+        SrcAlign: ::libc::c_uint,
+        Size: LLVMValueRef,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildAlloca(
+        arg1: LLVMBuilderRef,
+        Ty: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildArrayAlloca(
+        arg1: LLVMBuilderRef,
+        Ty: LLVMTypeRef,
+        Val: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildFree(arg1: LLVMBuilderRef, PointerVal: LLVMValueRef) -> LLVMValueRef;
+    pub fn LLVMBuildLoad2(
+        arg1: LLVMBuilderRef,
+        Ty: LLVMTypeRef,
+        PointerVal: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildStore(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        Ptr: LLVMValueRef,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildGEP2(
+        B: LLVMBuilderRef,
+        Ty: LLVMTypeRef,
+        Pointer: LLVMValueRef,
+        Indices: *mut LLVMValueRef,
+        NumIndices: ::libc::c_uint,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildInBoundsGEP2(
+        B: LLVMBuilderRef,
+        Ty: LLVMTypeRef,
+        Pointer: LLVMValueRef,
+        Indices: *mut LLVMValueRef,
+        NumIndices: ::libc::c_uint,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildStructGEP2(
+        B: LLVMBuilderRef,
+        Ty: LLVMTypeRef,
+        Pointer: LLVMValueRef,
+        Idx: ::libc::c_uint,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildGlobalString(
+        B: LLVMBuilderRef,
+        Str: *const ::libc::c_char,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildGlobalStringPtr(
+        B: LLVMBuilderRef,
+        Str: *const ::libc::c_char,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMGetVolatile(MemoryAccessInst: LLVMValueRef) -> LLVMBool;
+    pub fn LLVMSetVolatile(MemoryAccessInst: LLVMValueRef, IsVolatile: LLVMBool);
+    pub fn LLVMGetWeak(CmpXchgInst: LLVMValueRef) -> LLVMBool;
+    pub fn LLVMSetWeak(CmpXchgInst: LLVMValueRef, IsWeak: LLVMBool);
+    pub fn LLVMGetOrdering(MemoryAccessInst: LLVMValueRef) -> LLVMAtomicOrdering;
+    pub fn LLVMSetOrdering(MemoryAccessInst: LLVMValueRef, Ordering: LLVMAtomicOrdering);
+    pub fn LLVMGetAtomicRMWBinOp(AtomicRMWInst: LLVMValueRef) -> LLVMAtomicRMWBinOp;
+    pub fn LLVMSetAtomicRMWBinOp(AtomicRMWInst: LLVMValueRef, BinOp: LLVMAtomicRMWBinOp);
+
+    // Casts
+    pub fn LLVMBuildTrunc(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        DestTy: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildZExt(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        DestTy: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildSExt(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        DestTy: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildFPToUI(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        DestTy: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildFPToSI(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        DestTy: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildUIToFP(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        DestTy: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildSIToFP(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        DestTy: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildFPTrunc(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        DestTy: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildFPExt(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        DestTy: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildPtrToInt(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        DestTy: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildIntToPtr(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        DestTy: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildBitCast(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        DestTy: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildAddrSpaceCast(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        DestTy: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildZExtOrBitCast(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        DestTy: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildSExtOrBitCast(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        DestTy: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildTruncOrBitCast(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        DestTy: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildCast(
+        B: LLVMBuilderRef,
+        Op: LLVMOpcode,
+        Val: LLVMValueRef,
+        DestTy: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildPointerCast(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        DestTy: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildIntCast(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        DestTy: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildIntCast2(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        DestTy: LLVMTypeRef,
+        IsSigned: LLVMBool,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildFPCast(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        DestTy: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+
+    // Comparisons
+    pub fn LLVMBuildICmp(
+        arg1: LLVMBuilderRef,
+        Op: LLVMIntPredicate,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildFCmp(
+        arg1: LLVMBuilderRef,
+        Op: LLVMRealPredicate,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+
+    // Miscellaneous instructions
+    pub fn LLVMBuildPhi(
+        arg1: LLVMBuilderRef,
+        Ty: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    #[deprecated(
+    since = "14.0",
+    note = "Use LLVMBuildCall2 instead to support opaque pointers."
+    )]
+    pub fn LLVMBuildCall(
+        arg1: LLVMBuilderRef,
+        Fn: LLVMValueRef,
+        Args: *mut LLVMValueRef,
+        NumArgs: ::libc::c_uint,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildCall2(
+        arg1: LLVMBuilderRef,
+        arg2: LLVMTypeRef,
+        Fn: LLVMValueRef,
+        Args: *mut LLVMValueRef,
+        NumArgs: ::libc::c_uint,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildSelect(
+        arg1: LLVMBuilderRef,
+        If: LLVMValueRef,
+        Then: LLVMValueRef,
+        Else: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildVAArg(
+        arg1: LLVMBuilderRef,
+        List: LLVMValueRef,
+        Ty: LLVMTypeRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildExtractElement(
+        arg1: LLVMBuilderRef,
+        VecVal: LLVMValueRef,
+        Index: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildInsertElement(
+        arg1: LLVMBuilderRef,
+        VecVal: LLVMValueRef,
+        EltVal: LLVMValueRef,
+        Index: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildShuffleVector(
+        arg1: LLVMBuilderRef,
+        V1: LLVMValueRef,
+        V2: LLVMValueRef,
+        Mask: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildExtractValue(
+        arg1: LLVMBuilderRef,
+        AggVal: LLVMValueRef,
+        Index: ::libc::c_uint,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildInsertValue(
+        arg1: LLVMBuilderRef,
+        AggVal: LLVMValueRef,
+        EltVal: LLVMValueRef,
+        Index: ::libc::c_uint,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildFreeze(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildIsNull(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildIsNotNull(
+        arg1: LLVMBuilderRef,
+        Val: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    #[deprecated(
+    since = "14.0",
+    note = "Use LLVMBuildPtrDiff2 instead to support opaque pointers."
+    )]
+    pub fn LLVMBuildPtrDiff(
+        arg1: LLVMBuilderRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildPtrDiff2(
+        arg1: LLVMBuilderRef,
+        ElemTy: LLVMTypeRef,
+        LHS: LLVMValueRef,
+        RHS: LLVMValueRef,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildFence(
+        B: LLVMBuilderRef,
+        ordering: LLVMAtomicOrdering,
+        singleThread: LLVMBool,
+        Name: *const ::libc::c_char,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildAtomicRMW(
+        B: LLVMBuilderRef,
+        op: LLVMAtomicRMWBinOp,
+        PTR: LLVMValueRef,
+        Val: LLVMValueRef,
+        ordering: LLVMAtomicOrdering,
+        singleThread: LLVMBool,
+    ) -> LLVMValueRef;
+    pub fn LLVMBuildAtomicCmpXchg(
+        B: LLVMBuilderRef,
+        Ptr: LLVMValueRef,
+        Cmp: LLVMValueRef,
+        New: LLVMValueRef,
+        SuccessOrdering: LLVMAtomicOrdering,
+        FailureOrdering: LLVMAtomicOrdering,
+        SingleThread: LLVMBool,
+    ) -> LLVMValueRef;
+
 }
 
 impl Drop for Builder {

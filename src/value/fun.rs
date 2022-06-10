@@ -2,6 +2,7 @@ use crate::value::{LlvmValue, Value};
 use crate::types::fun::FunType;
 use std::marker::PhantomData;
 
+/// REpresents a function value.
 pub struct FunValue<R: Value>(LlvmValue, FunType<R::Type>, PhantomData<R>);
 
 impl<R: Value> Value for FunValue<R> {

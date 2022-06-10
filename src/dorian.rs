@@ -1,3 +1,4 @@
+use llvm_sys::core::LLVMIsMultithreaded;
 use crate::llvm::context::Context;
 use crate::module::Module;
 
@@ -26,5 +27,12 @@ impl Dorian {
     /// Creates a module under a [Dorian] instance.
     pub fn create_module(&self, name: &str) -> Module {
         Module::from_llvm(self, self.0.create_module(name))
+    }
+
+    /// TODO: is this okay idk
+    pub fn is_multithreaded() -> bool {
+        unsafe {
+            LLVMIsMultithreaded() != 0
+        }
     }
 }

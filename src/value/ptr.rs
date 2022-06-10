@@ -5,6 +5,7 @@ use crate::types::Type;
 use crate::value::data::BuildValue;
 use crate::value::{LlvmValue, Value};
 
+/// Represents a pointer value.
 #[derive(Debug, Copy, Clone)]
 pub struct PtrValue<V: Value + Copy + Clone>(LlvmValue, PtrType<V::Type>, );
 
@@ -24,6 +25,7 @@ impl<V: Value + Copy + Clone> Value for PtrValue<V> where V::Type: Copy + Clone 
     }
 }
 
+/// Represents a binary operation that an pointer value may undergo.
 pub enum BinOp {
     Add,
     NuwAdd,
@@ -48,6 +50,7 @@ pub enum BinOp {
     Xor,
 }
 
+/// Represents a unary operation that an pointer value may undergo.
 pub enum UnaOp {
     Not,
     Neg,
@@ -55,6 +58,7 @@ pub enum UnaOp {
     NuwNeg,
 }
 
+/// Represents ways for instantiating a pointer value.
 pub enum Ptr<'a, V: Value> {
     Ref(&'a V, AddressSpace),
     Alloc(&'a V, AddressSpace),
@@ -101,6 +105,8 @@ impl<'a, V: Value + Copy + Clone> BuildValue<'a> for Ptr<'a, V> where V::Type: C
     }
 }
 
+
+/// Represents the de-referencing of a pointer value.
 #[derive(Debug, Copy, Clone)]
 pub struct Deref<'a, V: Value + Copy + Clone>(&'a PtrValue<V>);
 

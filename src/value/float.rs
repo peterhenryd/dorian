@@ -6,6 +6,7 @@ use crate::types::Type;
 use crate::value::data::BuildValue;
 use crate::value::{LlvmValue, Value};
 
+/// Represents a floating-point value.
 #[derive(Debug, Copy, Clone)]
 pub struct FloatValue(LlvmValue, FloatType);
 
@@ -25,6 +26,7 @@ impl Value for FloatValue {
     }
 }
 
+/// Represents a binary operation that a floating-point value may undergo.
 pub enum BinOp {
     Add,
     Sub,
@@ -33,10 +35,12 @@ pub enum BinOp {
     Rem,
 }
 
+/// Represents a unary operation that a floating-point value may undergo.
 pub enum UnaOp {
     Neg,
 }
 
+/// Represents a collection of various operations that a floating-point may undergo.
 pub enum Float<'a> {
     Bin(BinOp, &'a FloatValue, &'a FloatValue),
     Cmp(CmpOp, &'a FloatValue, &'a FloatValue),

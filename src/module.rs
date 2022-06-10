@@ -6,9 +6,11 @@ use crate::llvm::OptimizationLevel;
 use crate::types::fun::FunType;
 use crate::types::Type;
 
+/// Represents a module consisting of functions, structures, and other symbols.
 pub struct Module<'a>(&'a Dorian, LlvmModule<'a>);
 
 impl<'a> Module<'a> {
+    /// Creates a [Module] from an [LlvmModule]
     pub fn from_llvm(dorian: &'a Dorian, llvm_module: LlvmModule<'a>) -> Module<'a> {
         Module(dorian, llvm_module)
     }

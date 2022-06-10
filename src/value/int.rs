@@ -5,6 +5,7 @@ use crate::types::Type;
 use crate::value::data::BuildValue;
 use crate::value::{LlvmValue, Value};
 
+/// Represents an integer value.
 #[derive(Debug, Copy, Clone)]
 pub struct IntValue(LlvmValue, IntType);
 
@@ -24,6 +25,7 @@ impl Value for IntValue {
     }
 }
 
+/// Represents a binary operation that an integer value may undergo.
 pub enum BinOp {
     Add,
     NuwAdd,
@@ -48,6 +50,7 @@ pub enum BinOp {
     Xor,
 }
 
+/// Represents a unary operation that a integer value may undergo.
 pub enum UnaOp {
     Not,
     Neg,
@@ -55,6 +58,7 @@ pub enum UnaOp {
     NuwNeg,
 }
 
+/// Represents a collection of various operations that a integer may undergo.
 pub enum Int<'a> {
     Bin(BinOp, &'a IntValue, &'a IntValue),
     Una(UnaOp, &'a IntValue),

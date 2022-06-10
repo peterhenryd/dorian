@@ -1,10 +1,12 @@
 use crate::types::{Raw, Type};
 use crate::value::{LlvmValue, Value};
 
+/// Represents a value that doesn't have a [Type].
 #[derive(Debug, Copy, Clone)]
 pub struct AnyValue(LlvmValue, Raw);
 
 impl AnyValue {
+    /// Creates a new [AnyValue].
     pub unsafe fn new_inferred(value: LlvmValue) -> Self {
         AnyValue(value, Raw::from_llvm_type_unchecked(value.get_type()))
     }

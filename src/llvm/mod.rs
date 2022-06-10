@@ -1,7 +1,14 @@
 pub extern crate llvm_sys as sys;
 
-use std::ffi::{CStr, CString};
+use std::ffi::{c_void, CStr, CString};
 use std::os::raw::c_char;
+use std::ptr::NonNull;
+use llvm_sys::core::{LLVMCreatePassManager, LLVMDisposePassManager, LLVMFinalizeFunctionPassManager, LLVMInitializeFunctionPassManager, LLVMRunFunctionPassManager, LLVMRunPassManager, LLVMShutdown};
+use llvm_sys::error::{LLVMConsumeError, LLVMCreateStringError, LLVMGetErrorMessage, LLVMGetErrorTypeId, LLVMOpaqueError};
+use llvm_sys::{LLVMPassManager, LLVMPassRegistry};
+use llvm_sys::initialization::{LLVMInitializeAggressiveInstCombiner, LLVMInitializeAnalysis, LLVMInitializeCodeGen, LLVMInitializeCore, LLVMInitializeInstCombine, LLVMInitializeInstrumentation, LLVMInitializeIPA, LLVMInitializeIPO, LLVMInitializeObjCARCOpts, LLVMInitializeScalarOpts, LLVMInitializeTarget, LLVMInitializeTransformUtils, LLVMInitializeVectorization};
+use crate::llvm::fun::Fun;
+use crate::llvm::module::Module;
 
 pub mod basic_block;
 pub mod builder;
@@ -13,6 +20,13 @@ pub mod opcode;
 pub mod target;
 pub mod types;
 pub mod value;
+pub mod memory_buffer;
+pub mod debug;
+pub mod disassembler;
+pub mod lto;
+pub mod object;
+pub mod orc2;
+pub mod remarks;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -127,8 +141,8 @@ pub enum CodeModel {
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum CodeGenFileType {
-    AssemblyFile = 0,
-    ObjectFile = 1,
+    Assembly = 0,
+    Object = 1,
 }
 
 
@@ -165,5 +179,204 @@ fn from_c_string<'a>(ptr: *const c_char) -> &'a str {
         CStr::from_ptr(ptr)
             .to_str()
             .expect("received CString is not valid UTF-8")
+    }
+}
+
+// TODO: kinda unsure about all of this verifier stuff and if it's really necessary
+#[repr(C)]
+pub enum VerifierFailureAction {
+    /// Print to stderr and abort the process.
+    AbortProcessAction = 0,
+    /// Print to stderr and return 1.
+    PrintMessageAction = 1,
+    /// Return 1 and print nothing.
+    ReturnStatusAction = 2,
+}
+
+// TODO: idk if i like this
+pub fn shutdown() {
+    unsafe {
+        LLVMShutdown();
+    }
+}
+
+// TODO: do we need these?
+// pub fn LLVMCreateMessage(Message: *const ::libc::c_char) -> *mut ::libc::c_char;
+//  pub fn LLVMDisposeMessage(Message: *mut ::libc::c_char);
+
+#[derive(Debug)]
+pub struct Error(NonNull<LLVMOpaqueError>);
+
+impl Error {
+    #[inline]
+    pub fn from_raw(raw: NonNull<LLVMOpaqueError>) -> Error {
+        Error(raw)
+    }
+
+    #[inline]
+    pub fn as_raw(&self) -> NonNull<LLVMOpaqueError> {
+        self.1
+    }
+
+    pub fn create(message: &str) -> Error {
+        Error(unsafe {
+            NonNull::new_unchecked(
+                LLVMCreateStringError(
+                    to_c_string(Some(message)).as_ptr()
+                )
+            )
+        })
+    }
+
+    // TODO: make this nicer
+    pub fn get_type_id(&self) -> *const c_void {
+        unsafe {
+            LLVMGetErrorTypeId(self.0.as_ptr())
+        }
+    }
+
+    pub fn get_message(&self) -> &str {
+        from_c_string(unsafe {
+            LLVMGetErrorMessage(
+                self.0.as_ptr()
+            )
+        })
+    }
+
+    // TODO: pub fn DisposeErrorMessage(ErrMsg: *mut ::libc::c_char);
+    // TODO: pub fn GetStringErrorTypeId() -> LLVMErrorTypeId;
+}
+
+// TODO: unsure if this is correct
+impl Drop for Error {
+    fn drop(&mut self) {
+        unsafe {
+            LLVMConsumeError(self.0.as_ptr());
+        }
+    }
+}
+
+pub type LLVMFatalErrorHandler = Option<extern "C" fn(Reason: *const ::libc::c_char)>;
+
+pub fn LLVMInstallFatalErrorHandler(Handler: LLVMFatalErrorHandler);
+pub fn LLVMResetFatalErrorHandler();
+pub fn LLVMEnablePrettyStackTrace();
+
+#[derive(Debug)]
+pub struct PassRegistry(NonNull<LLVMPassRegistry>);
+
+impl PassRegistry {
+    pub fn initialize_core(&self) {
+        unsafe { LLVMInitializeCore(self.0.as_ptr()); }
+    }
+
+    pub fn initialize_transform_utils(&self) {
+        unsafe { LLVMInitializeTransformUtils(self.0.as_ptr()); }
+    }
+
+    pub fn initialize_scalar_opts(&self) {
+        unsafe { LLVMInitializeScalarOpts(self.0.as_ptr()); }
+    }
+
+    pub fn initialize_obj_carc_opts(&self) {
+        unsafe { LLVMInitializeObjCARCOpts(self.0.as_ptr()); }
+    }
+
+    pub fn initialize_vectorization(&self) {
+        unsafe { LLVMInitializeVectorization(self.0.as_ptr()); }
+    }
+
+    pub fn initialize_inst_combine(&self) {
+        unsafe { LLVMInitializeInstCombine(self.0.as_ptr()); }
+    }
+
+    pub fn initialize_aggressive_inst_combiner(&self) {
+        unsafe { LLVMInitializeAggressiveInstCombiner(self.0.as_ptr()); }
+    }
+
+    pub fn initialize_ipo(&self) {
+        unsafe { LLVMInitializeIPO(self.0.as_ptr()); }
+    }
+
+    pub fn initialize_instrumentation(&self) {
+        unsafe { LLVMInitializeInstrumentation(self.0.as_ptr()); }
+    }
+
+    pub fn initialize_analysis(&self) {
+        unsafe { LLVMInitializeAnalysis(self.0.as_ptr()); }
+    }
+
+    pub fn initialize_ipa(&self) {
+        unsafe { LLVMInitializeIPA(self.0.as_ptr()); }
+    }
+
+    pub fn initialize_code_gen(&self) {
+        unsafe { LLVMInitializeCodeGen(self.0.as_ptr()); }
+    }
+
+    pub fn initialize_target(&self) {
+        unsafe { LLVMInitializeTarget(self.0.as_ptr()); }
+    }
+}
+
+pub fn load_library_permanently(filename: &str) -> bool;
+pub fn parse_command_line_options(
+    argv: Vec<&str>,
+    overview: &str
+);
+
+pub fn search_for_address_of_symbol(symbolName: *const ::libc::c_char) -> *mut ::libc::c_void;
+pub fn add_symbol(name: &str, value: *mut c_void);
+
+#[derive(Debug)]
+pub struct PassManager(NonNull<LLVMPassManager>);
+
+impl PassManager {
+    pub fn from_raw(raw: NonNull<LLVMPassManager>) -> PassManager {
+        PassManager(raw)
+    }
+
+    pub fn as_raw(&self) -> NonNull<LLVMPassManager> {
+        self.0
+    }
+
+    pub fn new() -> PassManager {
+        PassManager(unsafe {
+            NonNull::new_unchecked(
+                LLVMCreatePassManager()
+            )
+        })
+    }
+
+    pub fn run(&self, module: Module) -> bool {
+        unsafe {
+            LLVMRunPassManager(self.0.as_ptr(), module.as_raw().as_ptr()) != 0
+        }
+    }
+
+    pub fn initialize_function(&self) -> bool {
+        unsafe {
+            LLVMInitializeFunctionPassManager(self.0.as_ptr()) != 0
+        }
+    }
+
+    pub fn finalize_function(&self) -> bool {
+        unsafe {
+            LLVMFinalizeFunctionPassManager(self.0.as_ptr()) != 0
+        }
+    }
+
+    pub fn run_function(&self, fun: Fun) -> bool {
+        unsafe {
+            LLVMRunFunctionPassManager(self.0.as_ptr(), fun.as_raw().as_ptr()) != 0
+        }
+    }
+}
+
+impl Drop for PassManager {
+    fn drop(&mut self) {
+        unsafe {
+            LLVMDisposePassManager(self.0.as_ptr())
+        }
     }
 }

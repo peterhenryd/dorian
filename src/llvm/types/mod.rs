@@ -43,6 +43,105 @@ impl Type {
             }
         )
     }
+
+    pub fn LLVMGetInlineAsm(
+        Ty: LLVMTypeRef,
+        AsmString: *mut ::libc::c_char,
+        AsmStringSize: ::libc::size_t,
+        Constraints: *mut ::libc::c_char,
+        ConstraintsSize: ::libc::size_t,
+        HasSideEffects: LLVMBool,
+        IsAlignStack: LLVMBool,
+        Dialect: LLVMInlineAsmDialect,
+        CanThrow: LLVMBool,
+    ) -> LLVMValueRef;
+
+    pub fn LLVMGetTypeKind(Ty: LLVMTypeRef) -> LLVMTypeKind;
+    pub fn LLVMTypeIsSized(Ty: LLVMTypeRef) -> LLVMBool;
+    pub fn LLVMGetTypeContext(Ty: LLVMTypeRef) -> LLVMContextRef;
+    pub fn LLVMDumpType(Val: LLVMTypeRef);
+    pub fn LLVMPrintTypeToString(Val: LLVMTypeRef) -> *mut ::libc::c_char;
+
+    pub fn LLVMGetIntTypeWidth(IntegerTy: LLVMTypeRef) -> ::libc::c_uint;
+
+
+    pub fn LLVMGetStructName(Ty: LLVMTypeRef) -> *const ::libc::c_char;
+    pub fn LLVMStructSetBody(
+        StructTy: LLVMTypeRef,
+        ElementTypes: *mut LLVMTypeRef,
+        ElementCount: ::libc::c_uint,
+        Packed: LLVMBool,
+    );
+    pub fn LLVMCountStructElementTypes(StructTy: LLVMTypeRef) -> ::libc::c_uint;
+    pub fn LLVMGetStructElementTypes(StructTy: LLVMTypeRef, Dest: *mut LLVMTypeRef);
+    /// Get the type of the element at the given index in a structure.
+    ///
+    /// Added in LLVM 3.7.
+    pub fn LLVMStructGetTypeAtIndex(StructTy: LLVMTypeRef, i: ::libc::c_uint) -> LLVMTypeRef;
+    /// Determine whether a structure is packed.
+    pub fn LLVMIsPackedStruct(StructTy: LLVMTypeRef) -> LLVMBool;
+    pub fn LLVMIsOpaqueStruct(StructTy: LLVMTypeRef) -> LLVMBool;
+    pub fn LLVMIsLiteralStruct(StructTy: LLVMTypeRef) -> LLVMBool;
+
+    // Core->Types->Sequential
+    pub fn LLVMGetElementType(Ty: LLVMTypeRef) -> LLVMTypeRef;
+    /// Get the subtypes of the given type.
+    pub fn LLVMGetSubtypes(Tp: LLVMTypeRef, Arr: *mut LLVMTypeRef);
+    /// Return the number of types in the derived type.
+    pub fn LLVMGetNumContainedTypes(Tp: LLVMTypeRef) -> ::libc::c_uint;
+    pub fn LLVMArrayType(ElementType: LLVMTypeRef, ElementCount: ::libc::c_uint) -> LLVMTypeRef;
+    pub fn LLVMGetArrayLength(ArrayTy: LLVMTypeRef) -> ::libc::c_uint;
+    pub fn LLVMPointerType(ElementType: LLVMTypeRef, AddressSpace: ::libc::c_uint) -> LLVMTypeRef;
+    pub fn LLVMGetPointerAddressSpace(PointerTy: LLVMTypeRef) -> ::libc::c_uint;
+    pub fn LLVMVectorType(ElementType: LLVMTypeRef, ElementCount: ::libc::c_uint) -> LLVMTypeRef;
+    /// Create a vector type that contains a defined type and has a scalable
+    /// number of elements.
+    ///
+    /// The created type will exist in the context that its element type
+    /// exists in.
+    pub fn LLVMScalableVectorType(
+        ElementType: LLVMTypeRef,
+        ElementCount: ::libc::c_uint,
+    ) -> LLVMTypeRef;
+    /// Obtain the (possibly scalable) number of elements in a vector type.
+    pub fn LLVMGetVectorSize(VectorTy: LLVMTypeRef) -> ::libc::c_uint;
+
+
+    pub fn LLVMConstNull(Ty: LLVMTypeRef) -> LLVMValueRef;
+    pub fn LLVMConstAllOnes(Ty: LLVMTypeRef) -> LLVMValueRef;
+    pub fn LLVMGetUndef(Ty: LLVMTypeRef) -> LLVMValueRef;
+    pub fn LLVMGetPoison(Ty: LLVMTypeRef) -> LLVMValueRef;
+    pub fn LLVMIsNull(Val: LLVMValueRef) -> LLVMBool;
+    pub fn LLVMConstPointerNull(Ty: LLVMTypeRef) -> LLVMValueRef;
+    pub fn LLVMConstInt(
+        IntTy: LLVMTypeRef,
+        N: ::libc::c_ulonglong,
+        SignExtend: LLVMBool,
+    ) -> LLVMValueRef;
+    pub fn LLVMConstIntOfArbitraryPrecision(
+        IntTy: LLVMTypeRef,
+        NumWords: ::libc::c_uint,
+        Words: *const u64,
+    ) -> LLVMValueRef;
+    pub fn LLVMConstIntOfString(
+        IntTy: LLVMTypeRef,
+        Text: *const ::libc::c_char,
+        Radix: u8,
+    ) -> LLVMValueRef;
+    pub fn LLVMConstIntOfStringAndSize(
+        IntTy: LLVMTypeRef,
+        Text: *const ::libc::c_char,
+        SLen: ::libc::c_uint,
+        Radix: u8,
+    ) -> LLVMValueRef;
+    pub fn LLVMConstReal(RealTy: LLVMTypeRef, N: ::libc::c_double) -> LLVMValueRef;
+    pub fn LLVMConstRealOfString(RealTy: LLVMTypeRef, Text: *const ::libc::c_char) -> LLVMValueRef;
+    pub fn LLVMConstRealOfStringAndSize(
+        RealTy: LLVMTypeRef,
+        Text: *const ::libc::c_char,
+        SLen: ::libc::c_uint,
+    ) -> LLVMValueRef;
+
 }
 
 impl Type {
