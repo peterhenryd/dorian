@@ -1,6 +1,4 @@
-//! Object file reading and writing
-
-use super::prelude::*;
+/* TODO: this whole module
 
 #[derive(Debug)]
 pub enum LLVMOpaqueSectionIterator {}
@@ -160,3 +158,6 @@ extern "C" {
         SI: LLVMSymbolIteratorRef,
     ) -> LLVMBool;
 }
+
+
+ */

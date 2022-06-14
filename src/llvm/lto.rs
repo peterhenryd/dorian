@@ -1,3 +1,5 @@
+/* TODO: this whole module
+
 //! Abstract link time optimization.
 //!
 //! ## ThinLTO
@@ -440,3 +442,5 @@ extern "C" {
         length: ::libc::c_int,
     );
 }
+
+*/

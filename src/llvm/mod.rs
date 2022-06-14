@@ -25,7 +25,6 @@ pub mod debug;
 pub mod disassembler;
 pub mod lto;
 pub mod object;
-pub mod orc2;
 pub mod remarks;
 
 #[repr(C)]
@@ -148,7 +147,7 @@ pub enum CodeGenFileType {
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum LLVMLinkage {
+pub enum Linkage {
     External = 0,
     AvailableExternally = 1,
     LinkOnceAny = 2,
@@ -166,6 +165,34 @@ pub enum LLVMLinkage {
     Common = 14,
     LinkerPrivate = 15,
     LinkerPrivateWeak = 16,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum ThreadLocalMode {
+    NotThreadLocal = 0,
+    GeneralDynamicTLSModel = 1,
+    LocalDynamicTLSModel = 2,
+    InitialExecTLSModel = 3,
+    LocalExecTLSModel = 4,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum ModuleFlagBehavior {
+    Error,
+    Warning,
+    Require,
+    Override,
+    Append,
+    AppendUnique,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum InlineAsmDialect {
+    ATT,
+    Intel,
 }
 
 #[inline(always)]
@@ -193,6 +220,34 @@ pub enum VerifierFailureAction {
     ReturnStatusAction = 2,
 }
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum LLVMModuleFlagBehavior {
+    Error,
+    Warning,
+    Require,
+    Override,
+    Append,
+    AppendUnique,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum DLLStorageClass {
+    Default = 0,
+    DLLImport = 1,
+    DLLExport = 2,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Visibility {
+    Default = 0,
+    Hidden = 1,
+    Protected = 2,
+}
+
+
 // TODO: idk if i like this
 pub fn shutdown() {
     unsafe {
@@ -215,7 +270,7 @@ impl Error {
 
     #[inline]
     pub fn as_raw(&self) -> NonNull<LLVMOpaqueError> {
-        self.1
+        self.0
     }
 
     pub fn create(message: &str) -> Error {
@@ -256,11 +311,9 @@ impl Drop for Error {
     }
 }
 
-pub type LLVMFatalErrorHandler = Option<extern "C" fn(Reason: *const ::libc::c_char)>;
-
-pub fn LLVMInstallFatalErrorHandler(Handler: LLVMFatalErrorHandler);
-pub fn LLVMResetFatalErrorHandler();
-pub fn LLVMEnablePrettyStackTrace();
+// TODO: pub fn LLVMInstallFatalErrorHandler(Handler: LLVMFatalErrorHandler);
+// TODO: pub fn LLVMResetFatalErrorHandler();
+// TODO: pub fn LLVMEnablePrettyStackTrace();
 
 #[derive(Debug)]
 pub struct PassRegistry(NonNull<LLVMPassRegistry>);
@@ -319,14 +372,11 @@ impl PassRegistry {
     }
 }
 
-pub fn load_library_permanently(filename: &str) -> bool;
-pub fn parse_command_line_options(
-    argv: Vec<&str>,
-    overview: &str
-);
+// TODO: pub fn load_library_permanently(filename: &str) -> bool;
+// TODO: pub fn parse_command_line_options(argv: Vec<&str>, overview: &str);
 
-pub fn search_for_address_of_symbol(symbolName: *const ::libc::c_char) -> *mut ::libc::c_void;
-pub fn add_symbol(name: &str, value: *mut c_void);
+// TODO: pub fn search_for_address_of_symbol(symbolName: *const ::libc::c_char) -> *mut ::libc::c_void;
+// TODO: pub fn add_symbol(name: &str, value: *mut c_void);
 
 #[derive(Debug)]
 pub struct PassManager(NonNull<LLVMPassManager>);

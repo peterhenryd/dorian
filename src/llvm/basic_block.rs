@@ -1,61 +1,106 @@
 use crate::llvm::sys::LLVMBasicBlock;
+use crate::llvm::value::Value;
 use std::ptr::NonNull;
+use llvm_sys::core::*;
+use crate::llvm::{from_c_string, to_c_string};
 
 #[derive(Debug, Copy, Clone)]
 pub struct BasicBlock(NonNull<LLVMBasicBlock>);
 
 impl BasicBlock {
+    #[inline(always)]
     pub fn from_raw(raw: NonNull<LLVMBasicBlock>) -> BasicBlock {
         BasicBlock(raw)
     }
 
+    #[inline(always)]
     pub fn as_raw(&self) -> NonNull<LLVMBasicBlock> {
         self.0
     }
 
-    pub fn as_value(BB: LLVMBasicBlockRef) -> LLVMValueRef;
-    pub fn ValueAsBasicBlock(Val: LLVMValueRef) -> LLVMBasicBlockRef;
-    pub fn GetBasicBlockName(BB: LLVMBasicBlockRef) -> *const ::libc::c_char;
-    pub fn GetBasicBlockParent(BB: LLVMBasicBlockRef) -> LLVMValueRef;
-    pub fn GetBasicBlockTerminator(BB: LLVMBasicBlockRef) -> LLVMValueRef;
-    pub fn CountBasicBlocks(Fn: LLVMValueRef) -> ::libc::c_uint;
-    pub fn GetBasicBlocks(Fn: LLVMValueRef, BasicBlocks: *mut LLVMBasicBlockRef);
-    pub fn GetFirstBasicBlock(Fn: LLVMValueRef) -> LLVMBasicBlockRef;
-    pub fn GetLastBasicBlock(Fn: LLVMValueRef) -> LLVMBasicBlockRef;
-    pub fn GetNextBasicBlock(BB: LLVMBasicBlockRef) -> LLVMBasicBlockRef;
-    pub fn GetPreviousBasicBlock(BB: LLVMBasicBlockRef) -> LLVMBasicBlockRef;
-    pub fn GetEntryBasicBlock(Fn: LLVMValueRef) -> LLVMBasicBlockRef;
-    /// Insert the given basic block after the insertion point of the given builder.
-    pub fn LLVMInsertExistingBasicBlockAfterInsertBlock(
-        Builder: LLVMBuilderRef,
-        BB: LLVMBasicBlockRef,
-    );
-    /// Append the given basic block to the basic block list of the given function.
-    pub fn LLVMAppendExistingBasicBlock(Fn: LLVMValueRef, BB: LLVMBasicBlockRef);
-    pub fn LLVMCreateBasicBlockInContext(
-        C: LLVMContextRef,
-        Name: *const ::libc::c_char,
-    ) -> LLVMBasicBlockRef;
-    pub fn LLVMAppendBasicBlockInContext(
-        C: LLVMContextRef,
-        Fn: LLVMValueRef,
-        Name: *const ::libc::c_char,
-    ) -> LLVMBasicBlockRef;
-    pub fn LLVMAppendBasicBlock(Fn: LLVMValueRef, Name: *const ::libc::c_char)
-                                -> LLVMBasicBlockRef;
-    pub fn LLVMInsertBasicBlockInContext(
-        C: LLVMContextRef,
-        BB: LLVMBasicBlockRef,
-        Name: *const ::libc::c_char,
-    ) -> LLVMBasicBlockRef;
-    pub fn LLVMInsertBasicBlock(
-        InsertBeforeBB: LLVMBasicBlockRef,
-        Name: *const ::libc::c_char,
-    ) -> LLVMBasicBlockRef;
-    pub fn LLVMDeleteBasicBlock(BB: LLVMBasicBlockRef);
-    pub fn LLVMRemoveBasicBlockFromParent(BB: LLVMBasicBlockRef);
-    pub fn LLVMMoveBasicBlockBefore(BB: LLVMBasicBlockRef, MovePos: LLVMBasicBlockRef);
-    pub fn LLVMMoveBasicBlockAfter(BB: LLVMBasicBlockRef, MovePos: LLVMBasicBlockRef);
-    pub fn LLVMGetFirstInstruction(BB: LLVMBasicBlockRef) -> LLVMValueRef;
-    pub fn LLVMGetLastInstruction(BB: LLVMBasicBlockRef) -> LLVMValueRef;
+    pub fn as_value(&self) -> Value {
+        Value::from_raw(unsafe {
+            NonNull::new_unchecked(LLVMBasicBlockAsValue(self.0.as_ptr()))
+        })
+    }
+
+    #[inline(always)]
+    pub fn get_name(&self) -> &str {
+        unsafe {
+            from_c_string(LLVMGetBasicBlockName(self.0.as_ptr()))
+        }
+    }
+
+    pub fn get_basic_block_parent(&self) -> Value {
+        Value::from_raw(unsafe {
+            NonNull::new_unchecked(
+                LLVMGetBasicBlockParent(self.0.as_ptr())
+            )
+        })
+    }
+
+    pub fn get_basic_block_terminator(&self) -> Value {
+        Value::from_raw(unsafe {
+            NonNull::new_unchecked(
+                LLVMGetBasicBlockTerminator(self.0.as_ptr())
+            )
+        })
+    }
+
+    pub fn get_next_basic_block(&self) -> BasicBlock {
+        BasicBlock::from_raw(unsafe {
+            NonNull::new_unchecked(
+                LLVMGetNextBasicBlock(self.0.as_ptr())
+            )
+        })
+    }
+
+    pub fn get_previous_basic_block(&self) -> BasicBlock {
+        BasicBlock::from_raw(unsafe {
+            NonNull::new_unchecked(
+                LLVMGetPreviousBasicBlock(self.0.as_ptr())
+            )
+        })
+    }
+
+    pub fn insert_basic_block(&self, name: &str) -> BasicBlock {
+        BasicBlock::from_raw(unsafe {
+            NonNull::new_unchecked(
+                LLVMInsertBasicBlock(
+                self.0.as_ptr(), to_c_string(Some(name)).as_ptr()
+                )
+            )
+        })
+    }
+
+    #[inline(always)]
+    pub fn remove_basic_block_from_parent(&self) {
+        unsafe { LLVMRemoveBasicBlockFromParent(self.0.as_ptr()); }
+    }
+
+    #[inline(always)]
+    pub fn move_basic_block_before(&self, basic_block: BasicBlock) {
+        unsafe { LLVMMoveBasicBlockBefore(self.0.as_ptr(), basic_block.0.as_ptr()); }
+    }
+
+    #[inline(always)]
+    pub fn move_basic_block_after(&self, basic_block: BasicBlock) {
+        unsafe { LLVMMoveBasicBlockAfter(self.0.as_ptr(), basic_block.0.as_ptr()); }
+    }
+
+    pub fn get_first_instruction(&self) -> Value {
+        Value::from_raw(unsafe {
+            NonNull::new_unchecked(
+                LLVMGetFirstInstruction(self.0.as_ptr())
+            )
+        })
+    }
+
+    pub fn get_last_instruction(&self) -> Value {
+        Value::from_raw(unsafe {
+            NonNull::new_unchecked(
+                LLVMGetLastInstruction(self.0.as_ptr())
+            )
+        })
+    }
 }

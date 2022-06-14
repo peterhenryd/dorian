@@ -1,13 +1,15 @@
 use crate::llvm::sys::target::{LLVMOpaqueTargetData, LLVMPointerSize, LLVMDisposeTargetData};
 use crate::llvm::sys::target_machine::{LLVMGetTargetFromTriple, LLVMTarget};
 use crate::llvm::target::triple::TargetTriple;
-use crate::llvm::{from_c_string, to_c_string};
+use crate::llvm::{CodeModel, from_c_string, OptimizationLevel, RelocMode, to_c_string};
 use std::mem::{MaybeUninit, transmute};
 use std::ptr::NonNull;
-use llvm_sys::prelude::{LLVMBool, LLVMContextRef, LLVMModuleRef, LLVMPassManagerRef, LLVMTypeRef, LLVMValueRef};
-use llvm_sys::target::{LLVM_InitializeAllAsmParsers, LLVM_InitializeAllAsmPrinters, LLVM_InitializeAllDisassemblers, LLVM_InitializeAllTargetInfos, LLVM_InitializeAllTargetMCs, LLVM_InitializeAllTargets, LLVM_InitializeNativeAsmParser, LLVM_InitializeNativeAsmPrinter, LLVM_InitializeNativeDisassembler, LLVM_InitializeNativeTarget, LLVMABIAlignmentOfType, LLVMByteOrder, LLVMByteOrdering, LLVMCallFrameAlignmentOfType, LLVMCopyStringRepOfTargetData, LLVMInitializeAArch64AsmParser, LLVMInitializeAArch64AsmPrinter, LLVMInitializeAArch64Disassembler, LLVMInitializeAArch64Target, LLVMInitializeAArch64TargetInfo, LLVMInitializeAArch64TargetMC, LLVMInitializeAMDGPUAsmParser, LLVMInitializeAMDGPUAsmPrinter, LLVMInitializeAMDGPUTarget, LLVMInitializeAMDGPUTargetInfo, LLVMInitializeAMDGPUTargetMC, LLVMInitializeARMAsmParser, LLVMInitializeARMAsmPrinter, LLVMInitializeARMDisassembler, LLVMInitializeARMTarget, LLVMInitializeARMTargetInfo, LLVMInitializeARMTargetMC, LLVMInitializeBPFAsmPrinter, LLVMInitializeBPFDisassembler, LLVMInitializeBPFTarget, LLVMInitializeBPFTargetInfo, LLVMInitializeBPFTargetMC, LLVMInitializeHexagonAsmPrinter, LLVMInitializeHexagonDisassembler, LLVMInitializeHexagonTarget, LLVMInitializeHexagonTargetInfo, LLVMInitializeHexagonTargetMC, LLVMInitializeLanaiAsmParser, LLVMInitializeLanaiAsmPrinter, LLVMInitializeLanaiDisassembler, LLVMInitializeLanaiTarget, LLVMInitializeLanaiTargetInfo, LLVMInitializeLanaiTargetMC, LLVMInitializeMipsAsmParser, LLVMInitializeMipsAsmPrinter, LLVMInitializeMipsDisassembler, LLVMInitializeMipsTarget, LLVMInitializeMipsTargetInfo, LLVMInitializeMipsTargetMC, LLVMInitializeMSP430AsmPrinter, LLVMInitializeMSP430Target, LLVMInitializeMSP430TargetInfo, LLVMInitializeMSP430TargetMC, LLVMInitializeNVPTXAsmPrinter, LLVMInitializeNVPTXTarget, LLVMInitializeNVPTXTargetInfo, LLVMInitializeNVPTXTargetMC, LLVMInitializePowerPCAsmParser, LLVMInitializePowerPCAsmPrinter, LLVMInitializePowerPCDisassembler, LLVMInitializePowerPCTarget, LLVMInitializePowerPCTargetInfo, LLVMInitializePowerPCTargetMC, LLVMInitializeRISCVAsmParser, LLVMInitializeRISCVAsmPrinter, LLVMInitializeRISCVDisassembler, LLVMInitializeRISCVTarget, LLVMInitializeRISCVTargetInfo, LLVMInitializeRISCVTargetMC, LLVMInitializeSparcAsmParser, LLVMInitializeSparcAsmPrinter, LLVMInitializeSparcDisassembler, LLVMInitializeSparcTarget, LLVMInitializeSparcTargetInfo, LLVMInitializeSparcTargetMC, LLVMInitializeSystemZAsmParser, LLVMInitializeSystemZAsmPrinter, LLVMInitializeSystemZDisassembler, LLVMInitializeSystemZTarget, LLVMInitializeSystemZTargetInfo, LLVMInitializeSystemZTargetMC, LLVMInitializeWebAssemblyAsmParser, LLVMInitializeWebAssemblyAsmPrinter, LLVMInitializeWebAssemblyDisassembler, LLVMInitializeWebAssemblyTarget, LLVMInitializeWebAssemblyTargetInfo, LLVMInitializeWebAssemblyTargetMC, LLVMInitializeX86AsmParser, LLVMInitializeX86AsmPrinter, LLVMInitializeX86Disassembler, LLVMInitializeX86Target, LLVMInitializeX86TargetInfo, LLVMInitializeX86TargetMC, LLVMInitializeXCoreAsmPrinter, LLVMInitializeXCoreDisassembler, LLVMInitializeXCoreTarget, LLVMInitializeXCoreTargetInfo, LLVMInitializeXCoreTargetMC, LLVMIntPtrType, LLVMIntPtrTypeForAS, LLVMOpaqueTargetLibraryInfotData, LLVMPreferredAlignmentOfType, LLVMSizeOfTypeInBits, LLVMTargetDataRef, LLVMTargetLibraryInfoRef};
+use llvm_sys::target::*;
+use llvm_sys::target_machine::{LLVMCreateTargetMachine, LLVMGetTargetDescription, LLVMGetTargetName, LLVMTargetHasAsmBackend, LLVMTargetHasJIT, LLVMTargetHasTargetMachine};
+use crate::llvm::target::machine::TargetMachine;
 use crate::llvm::types::Type;
 use crate::types::LlvmType;
+use crate::llvm::value::Value;
 
 pub mod init;
 pub mod machine;
@@ -41,6 +43,51 @@ impl<'a> Target<'a> {
                 Ok(Target(NonNull::new_unchecked(triple.assume_init()), target_triple))
             }
         }
+    }
+
+    // pub fn LLVMGetFirstTarget() -> LLVMTargetRef;
+    // pub fn LLVMGetNextTarget(T: LLVMTargetRef) -> LLVMTargetRef;
+    // pub fn LLVMGetTargetFromName(Name: *const ::libc::c_char) -> LLVMTargetRef;
+
+    pub fn get_name(&self) -> &str {
+        unsafe { from_c_string(LLVMGetTargetName(self.0.as_ptr())) }
+    }
+
+    pub fn get_description(&self) -> &str {
+        unsafe { from_c_string(LLVMGetTargetDescription(self.0.as_ptr())) }
+    }
+
+    pub fn has_jit(&self) -> bool {
+        unsafe { LLVMTargetHasJIT(self.0.as_ptr()) != 0 }
+    }
+
+    pub fn has_target_machine(&self) -> bool {
+        unsafe { LLVMTargetHasTargetMachine(self.0.as_ptr()) != 0 }
+    }
+
+    pub fn has_asm_backend(&self) -> bool {
+        unsafe { LLVMTargetHasAsmBackend(self.0.as_ptr()) != 0 }
+    }
+
+    pub fn create_machine(
+        &self,
+        cpu: &str,
+        features: &str,
+        optimization_level: OptimizationLevel,
+        reloc_mode: RelocMode,
+        code_model: CodeModel,
+    ) -> TargetMachine {
+        TargetMachine::from_raw(unsafe {
+            NonNull::new_unchecked(LLVMCreateTargetMachine(
+                self.0.as_ptr(),
+                to_c_string(Some(self.1.as_str())).as_ptr(),
+                to_c_string(Some(cpu)).as_ptr(),
+                to_c_string(Some(features)).as_ptr(),
+                transmute(optimization_level),
+                transmute(reloc_mode),
+                transmute(code_model),
+            ))
+        })
     }
 }
 
@@ -82,7 +129,7 @@ impl TargetData {
 
     pub fn pointer_size_for_as(&self, r#as: u32) -> u32 {
         unsafe {
-            LLVMPointerSizeForAs(self.0.as_ptr(), r#as)
+            LLVMPointerSizeForAS(self.0.as_ptr(), r#as)
         }
     }
 
@@ -102,58 +149,59 @@ impl TargetData {
         })
     }
 
-    pub fn SizeOfTypeInBits(&self, ty: LlvmType) -> u64 {
+    pub fn size_of_type_in_bits(&self, ty: LlvmType) -> u64 {
         unsafe {
             LLVMSizeOfTypeInBits(self.0.as_ptr(), ty.as_raw().as_ptr())
         }
     }
 
-    pub fn StoreSizeOfType(&self, ty: LlvmType) -> ::libc::c_ulonglong {
+    pub fn store_size_of_type(&self, ty: LlvmType) -> u64 {
         unsafe {
             LLVMSizeOfTypeInBits(self.0.as_ptr(), ty.as_raw().as_ptr())
         }
     }
 
-    pub fn ABISizeOfType(&self, ty: LlvmType) -> ::libc::c_ulonglong {
+    pub fn abi_size_of_type(&self, ty: LlvmType) -> u64 {
         unsafe {
             LLVMSizeOfTypeInBits(self.0.as_ptr(), ty.as_raw().as_ptr())
         }
     }
 
-    pub fn ABIAlignmentOfType(&self, ty: LlvmType) -> ::libc::c_uint {
+    pub fn abi_alignment_of_type(&self, ty: LlvmType) -> u32 {
         unsafe {
             LLVMABIAlignmentOfType(self.0.as_ptr(), ty.as_raw().as_ptr())
         }
     }
 
-    pub fn CallFrameAlignmentOfType(&self, ty: LlvmType) -> ::libc::c_uint {
+    pub fn call_frame_alignment_of_type(&self, ty: LlvmType) -> u32 {
         unsafe {
             LLVMCallFrameAlignmentOfType(self.0.as_ptr(), ty.as_raw().as_ptr())
         }
     }
 
-    pub fn PreferredAlignmentOfType(&self, ty: LlvmType) -> ::libc::c_uint {
+    pub fn preferred_alignment_of_type(&self, ty: LlvmType) -> u32 {
         unsafe {
             LLVMPreferredAlignmentOfType(self.0.as_ptr(), ty.as_raw().as_ptr())
         }
     }
 
-    pub fn PreferredAlignmentOfGlobal(
-        &self,
-        GlobalVar: LLVMValueRef,
-    ) -> ::libc::c_uint;
+    pub fn preferred_alignment_of_global(&self, global_var: Value) -> u32 {
+        unsafe {
+            LLVMPreferredAlignmentOfGlobal(self.0.as_ptr(), global_var.as_raw().as_ptr())
+        }
+    }
 
-    pub fn ElementAtOffset(
-        &self,
-        StructTy: LLVMTypeRef,
-        Offset: ::libc::c_ulonglong,
-    ) -> ::libc::c_uint;
+    pub fn element_at_offset(&self, struct_type: Type, offset: u64) -> u32 {
+        unsafe {
+            LLVMElementAtOffset(self.0.as_ptr(), struct_type.as_raw().as_ptr(), offset)
+        }
+    }
 
-    pub fn OffsetOfElement(
-        &self,
-        StructTy: LLVMTypeRef,
-        Element: ::libc::c_uint,
-    ) -> ::libc::c_ulonglong;
+    pub fn offset_of_element(&self, struct_type: Type, element: u32) -> u64 {
+        unsafe {
+            LLVMOffsetOfElement(self.0.as_ptr(), struct_type.as_raw().as_ptr(), element)
+        }
+    }
 }
 
 impl Drop for TargetData {
@@ -580,12 +628,11 @@ impl TargetInit {
     }
 }
 
+/* TODO: target data
 extern "C" {
-    /// Get the data layout for a module.
-    pub fn LLVMGetModuleDataLayout(M: LLVMModuleRef) -> LLVMTargetDataRef;
-    /// Set the data layout for a module.
-    pub fn LLVMSetModuleDataLayout(M: LLVMModuleRef, R: LLVMTargetDataRef);
     /// Create target data from a target layout string.
     pub fn LLVMCreateTargetData(StringRep: *const ::libc::c_char) -> LLVMTargetDataRef;
     pub fn LLVMAddTargetLibraryInfo(TLI: LLVMTargetLibraryInfoRef, PM: LLVMPassManagerRef);
 }
+
+ */

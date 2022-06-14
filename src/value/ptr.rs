@@ -3,11 +3,11 @@ use crate::llvm::AddressSpace;
 use crate::types::ptr::PtrType;
 use crate::types::Type;
 use crate::value::data::BuildValue;
-use crate::value::{LlvmValue, Value};
+use crate::value::{LlvmValue, NonAnyValue, Value};
 
 /// Represents a pointer value.
 #[derive(Debug, Copy, Clone)]
-pub struct PtrValue<V: Value + Copy + Clone>(LlvmValue, PtrType<V::Type>, );
+pub struct PtrValue<V: Value + Copy + Clone>(LlvmValue, PtrType<V::Type>);
 
 impl<V: Value + Copy + Clone> Value for PtrValue<V> where V::Type: Copy + Clone {
     type Type = PtrType<V::Type>;
@@ -24,6 +24,8 @@ impl<V: Value + Copy + Clone> Value for PtrValue<V> where V::Type: Copy + Clone 
         &self.1
     }
 }
+
+impl<V: Value + Copy + Clone> NonAnyValue for PtrValue<V> where V::Type: Copy + Clone {}
 
 /// Represents a binary operation that an pointer value may undergo.
 pub enum BinOp {

@@ -3,7 +3,7 @@ use crate::llvm::builder::Builder;
 use crate::types::int::IntType;
 use crate::types::Type;
 use crate::value::data::BuildValue;
-use crate::value::{LlvmValue, Value};
+use crate::value::{LlvmValue, NonAnyValue, Value};
 
 /// Represents an integer value.
 #[derive(Debug, Copy, Clone)]
@@ -24,6 +24,8 @@ impl Value for IntValue {
         &self.1
     }
 }
+
+impl NonAnyValue for IntValue {}
 
 /// Represents a binary operation that an integer value may undergo.
 pub enum BinOp {

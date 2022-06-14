@@ -12,6 +12,7 @@ pub mod int;
 pub mod ptr;
 pub mod structure;
 pub mod array;
+pub mod vector;
 
 /// Represents a type that a value has.
 pub trait Type: Debug {

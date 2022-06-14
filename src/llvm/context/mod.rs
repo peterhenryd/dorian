@@ -8,10 +8,14 @@ use crate::llvm::types::Type;
 use std::ptr::NonNull;
 use std::slice;
 use llvm_sys::ir_reader::LLVMParseIRInContext;
-use llvm_sys::{LLVMDiagnosticHandler, LLVMOpaqueAttributeRef, LLVMYieldCallback};
+use llvm_sys::{LLVMDiagnosticHandler, LLVMOpaqueAttributeRef};
 use llvm_sys::target::{LLVMIntPtrTypeForASInContext, LLVMIntPtrTypeInContext};
+use crate::llvm::basic_block::BasicBlock;
+use crate::llvm::debug::Metadata;
+use crate::llvm::fun::Fun;
 use crate::llvm::memory_buffer::MemoryBuffer;
 use crate::llvm::target::TargetData;
+use crate::llvm::value::Value;
 
 pub struct Context(NonNull<LLVMContext>);
 
@@ -176,6 +180,40 @@ impl Context {
         }
     }
 
+    pub fn get_vector_type(ty: Type, count: u32) -> Type {
+        unsafe {
+            Type::from_raw(NonNull::new_unchecked(
+                LLVMVectorType(ty.as_raw().as_ptr(), count)
+            ))
+        }
+    }
+
+    pub fn const_string(&self, str: &str, dont_null_terminate: bool) -> Value {
+        Value::from_raw(unsafe {
+            NonNull::new_unchecked(
+                LLVMConstStringInContext(self.0.as_ptr(), to_c_string(Some(str)).as_ptr(), str.len() as u32, dont_null_terminate as i32)
+            )
+        })
+    }
+
+    pub fn const_struct(&self, values: Vec<Value>, packed: bool, ) -> Value {
+        Value::from_raw(unsafe {
+            NonNull::new_unchecked(
+                LLVMConstStructInContext(
+                    self.0.as_ptr(),
+                    values.iter()
+                        .map(|value| value.as_raw().as_ptr())
+                        .collect::<Vec<_>>()
+                        .as_mut_ptr(),
+                    values.len() as u32,
+                    packed as i32
+                )
+            )
+        })
+    }
+
+
+    /*
     pub fn set_diagnostic_handler(
         &self,
         handler: DiagnosticHandler,
@@ -209,6 +247,7 @@ impl Context {
             LLVMContextSetYieldCallback(self.0.as_ptr(), callback, opaque_handle)
         }
     }
+     */
 
     pub fn should_discard_value_names(&self) -> bool {
         unsafe { LLVMContextShouldDiscardValueNames(self.0.as_ptr()) != 0 }
@@ -275,7 +314,8 @@ impl Context {
                 LLVMStructType(
                     elements.iter()
                         .map(|element| element.as_raw().as_ptr())
-                        .collect(),
+                        .collect::<Vec<_>>()
+                        .as_mut_ptr(),
                     elements.len() as u32,
                     packed as i32
                 )
@@ -294,9 +334,9 @@ impl Context {
         })
     }
 
-    pub fn parse_ir(
-        &self,
-        context: &Context,
+    pub fn parse_ir<'a>(
+        &'a self,
+        context: &'a Context,
         memory_buffer: MemoryBuffer,
     ) -> Result<Module, Error> {
         let mut module = MaybeUninit::uninit();
@@ -339,6 +379,62 @@ impl Context {
             )
         })
     }
+
+    pub fn create_metadata_string(&self, str: &str) -> Metadata {
+        Metadata::from_raw(unsafe {
+            NonNull::new_unchecked(
+                LLVMMDStringInContext2(self.0.as_ptr(), to_c_string(Some(str)).as_ptr(), str.len())
+            )
+        })
+    }
+
+    pub fn create_metadata_node(&self, metadata: Vec<Metadata>) -> Metadata {
+        Metadata::from_raw(unsafe {
+            NonNull::new_unchecked(
+                LLVMMDNodeInContext2(
+                    self.0.as_ptr(),
+                    metadata.iter()
+                        .map(|m| m.as_raw().as_ptr())
+                        .collect::<Vec<_>>()
+                        .as_mut_ptr(),
+                    metadata.len()
+                )
+            )
+        })
+    }
+
+    pub fn as_value(&self, metadata: Metadata) -> Value {
+        Value::from_raw(unsafe {
+            NonNull::new_unchecked(LLVMMetadataAsValue(self.0.as_ptr(), metadata.as_raw().as_ptr()))
+        })
+    }
+
+    pub fn create_basic_block(&self, name: &str) -> BasicBlock {
+        BasicBlock::from_raw(unsafe {
+            NonNull::new_unchecked(
+                LLVMCreateBasicBlockInContext(self.0.as_ptr(), to_c_string(Some(name)).as_ptr())
+            )
+        })
+    }
+
+    pub fn append_basic_block(&self, fun: Fun, name: &str) -> BasicBlock {
+        BasicBlock::from_raw(unsafe {
+            NonNull::new_unchecked(
+                LLVMAppendBasicBlockInContext(self.0.as_ptr(), fun.as_raw().as_ptr(), to_c_string(Some(name)).as_ptr())
+            )
+        })
+    }
+
+    pub fn insert_basic_block(
+        &self, basic_block: BasicBlock, name: &str
+    ) -> BasicBlock {
+        BasicBlock::from_raw(unsafe {
+            NonNull::new_unchecked(
+                LLVMInsertBasicBlockInContext(self.0.as_ptr(), basic_block.as_raw().as_ptr(), to_c_string(Some(name)).as_ptr())
+            )
+        })
+    }
+
 }
 
 impl Drop for Context {

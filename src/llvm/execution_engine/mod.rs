@@ -78,49 +78,7 @@ impl ExecutionEngine {
     }
 }
 
-#[derive(Debug)]
-pub enum LLVMOpaqueGenericValue {}
-
-#[derive(Debug)]
-pub enum LLVMOpaqueExecutionEngine {}
-
-#[derive(Debug)]
-pub enum LLVMOpaqueMCJITMemoryManager {}
-
-pub type LLVMGenericValueRef = *mut LLVMOpaqueGenericValue;
-pub type LLVMExecutionEngineRef = *mut LLVMOpaqueExecutionEngine;
-pub type LLVMMCJITMemoryManagerRef = *mut LLVMOpaqueMCJITMemoryManager;
-
-#[repr(C)]
-#[derive(Debug, Clone, Copy)]
-#[allow(non_snake_case)]
-pub struct LLVMMCJITCompilerOptions {
-    pub OptLevel: ::libc::c_uint,
-    pub CodeModel: LLVMCodeModel,
-    pub NoFramePointerElim: LLVMBool,
-    pub EnableFastISel: LLVMBool,
-    pub MCJMM: LLVMMCJITMemoryManagerRef,
-}
-
-pub type LLVMMemoryManagerAllocateCodeSectionCallback = extern "C" fn(
-    Opaque: *mut ::libc::c_void,
-    Size: ::libc::uintptr_t,
-    Alignment: ::libc::c_uint,
-    SectionID: ::libc::c_uint,
-    SectionName: *const ::libc::c_char,
-) -> *mut u8;
-pub type LLVMMemoryManagerAllocateDataSectionCallback = extern "C" fn(
-    Opaque: *mut ::libc::c_void,
-    Size: ::libc::uintptr_t,
-    Alignment: ::libc::c_uint,
-    SectionID: ::libc::c_uint,
-    SectionName: *const ::libc::c_char,
-    IsReadOnly: LLVMBool,
-) -> *mut u8;
-pub type LLVMMemoryManagerFinalizeMemoryCallback =
-extern "C" fn(Opaque: *mut ::libc::c_void, ErrMsg: *mut *mut ::libc::c_char) -> LLVMBool;
-pub type LLVMMemoryManagerDestroyCallback = Option<extern "C" fn(Opaque: *mut ::libc::c_void)>;
-
+/* TODO: execution engine extras
 extern "C" {
     pub fn LLVMLinkInMCJIT();
     pub fn LLVMLinkInInterpreter();
@@ -282,5 +240,6 @@ extern "C" {
     pub fn LLVMCreateIntelJITEventListener() -> LLVMJITEventListenerRef;
     pub fn LLVMCreateOProfileJITEventListener() -> LLVMJITEventListenerRef;
     pub fn LLVMCreatePerfJITEventListener() -> LLVMJITEventListenerRef;
-
 }
+
+ */

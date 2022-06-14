@@ -1,12 +1,12 @@
 pub mod block;
 
+use std::marker::PhantomData;
 use crate::dorian::Dorian;
 use crate::fun::block::Block;
 use crate::llvm::fun::Fun as LlvmFun;
 use crate::types::{Raw, Type};
 use crate::value::any::AnyValue;
 use crate::value::Value;
-use std::marker::PhantomData;
 
 /// This structure represents a function in the context of a module.
 pub struct Fun<'a, R: Type>(&'a Dorian, LlvmFun<'a>, PhantomData<R>);
@@ -20,6 +20,10 @@ impl<'a, R: Type> Fun<'a, R> {
     /// Borrow the internal [LlvmFun].
     pub fn get_inner(&self) -> &LlvmFun<'a> {
         &self.1
+    }
+
+    pub fn get_return_type(&self) -> R {
+        unsafe { R::from_llvm_type_unchecked(self.1.get_return_type()) }
     }
 
     /// Add a named block to the function.

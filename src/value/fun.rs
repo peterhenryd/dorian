@@ -1,4 +1,4 @@
-use crate::value::{LlvmValue, Value};
+use crate::value::{LlvmValue, NonAnyValue, Value};
 use crate::types::fun::FunType;
 use std::marker::PhantomData;
 
@@ -20,3 +20,5 @@ impl<R: Value> Value for FunValue<R> {
         &self.1
     }
 }
+
+impl<R: Value> NonAnyValue for FunValue<R> {}

@@ -6,15 +6,20 @@ use crate::llvm::sys::core::*;
 use crate::llvm::sys::LLVMModule;
 use crate::llvm::target::triple::TargetTriple;
 use crate::llvm::types::Type;
-use crate::llvm::{from_c_string, PassManager, to_c_string, VerifierFailureAction};
+use crate::llvm::{Error, from_c_string, ModuleFlagBehavior, PassManager, to_c_string, VerifierFailureAction};
 use std::ptr::NonNull;
+use std::slice;
 use llvm_sys::analysis::LLVMVerifyModule;
 use llvm_sys::bit_reader::LLVMGetBitcodeModuleInContext2;
 use llvm_sys::bit_writer::{LLVMWriteBitcodeToFD, LLVMWriteBitcodeToFile, LLVMWriteBitcodeToMemoryBuffer};
 use llvm_sys::comdat::LLVMGetOrInsertComdat;
 use llvm_sys::debuginfo::{LLVMCreateDIBuilder, LLVMCreateDIBuilderDisallowUnresolved, LLVMGetModuleDebugMetadataVersion, LLVMStripModuleDebugInfo};
-use crate::llvm::debug::DIBuilder;
+use llvm_sys::linker::LLVMLinkModules2;
+use llvm_sys::prelude::LLVMModuleFlagEntry;
+use llvm_sys::target::{LLVMGetModuleDataLayout, LLVMSetModuleDataLayout};
+use crate::llvm::debug::{DIBuilder, Metadata};
 use crate::llvm::memory_buffer::MemoryBuffer;
+use crate::llvm::target::TargetData;
 use crate::llvm::value::Comdat;
 
 pub struct Module<'a>(&'a Context, NonNull<LLVMModule>);
@@ -87,6 +92,7 @@ impl<'a> Module<'a> {
                 to_c_string(Some(name)).as_ptr(),
                 fun_type.as_raw().as_ptr(),
             )),
+            fun_type
         )
     }
 
@@ -160,177 +166,159 @@ impl<'a> Module<'a> {
         })
     }
 
+    pub fn get_module_identifier(&self) -> String {
+        unsafe {
+            let mut len = MaybeUninit::uninit();
+            let chars = LLVMGetModuleIdentifier(self.1.as_ptr(), len.as_mut_ptr());
 
-    pub fn LLVMGetModuleIdentifier(
-        M: LLVMModuleRef,
-        Len: *mut ::libc::size_t,
-    ) -> *const ::libc::c_char;
-    pub fn LLVMSetModuleIdentifier(
-        M: LLVMModuleRef,
-        Ident: *const ::libc::c_char,
-        Len: ::libc::size_t,
-    );
-    pub fn LLVMGetSourceFileName(
-        M: LLVMModuleRef,
-        Len: *mut ::libc::size_t,
-    ) -> *const ::libc::c_char;
-    pub fn LLVMSetSourceFileName(
-        M: LLVMModuleRef,
-        Name: *const ::libc::c_char,
-        Len: ::libc::size_t,
-    );
-    #[deprecated(since = "3.9", note = "Confusingly named. Use LLVMGetDataLayoutStr.")]
-    pub fn LLVMGetDataLayout(M: LLVMModuleRef) -> *const ::libc::c_char;
-    pub fn LLVMGetDataLayoutStr(M: LLVMModuleRef) -> *const ::libc::c_char;
-    pub fn LLVMSetDataLayout(M: LLVMModuleRef, DataLayoutStr: *const ::libc::c_char);
-    pub fn LLVMGetTarget(M: LLVMModuleRef) -> *const ::libc::c_char;
-    pub fn LLVMSetTarget(M: LLVMModuleRef, Triple: *const ::libc::c_char);
-    pub fn LLVMCopyModuleFlagsMetadata(
-        M: LLVMModuleRef,
-        Len: *mut ::libc::size_t,
-    ) -> *mut LLVMModuleFlagEntry;
-    pub fn LLVMGetModuleFlag(
-        M: LLVMModuleRef,
-        Key: *const ::libc::c_char,
-        KeyLen: ::libc::size_t,
-    ) -> LLVMMetadataRef;
-    pub fn LLVMAddModuleFlag(
-        M: LLVMModuleRef,
-        Behavior: LLVMModuleFlagBehavior,
-        Key: *const ::libc::c_char,
-        KeyLen: ::libc::size_t,
-        Val: LLVMMetadataRef,
-    );
-    pub fn LLVMDumpModule(M: LLVMModuleRef);
-    pub fn LLVMPrintModuleToFile(
-        M: LLVMModuleRef,
-        Filename: *const ::libc::c_char,
-        ErrorMessage: *mut *mut ::libc::c_char,
-    ) -> LLVMBool;
-    pub fn LLVMPrintModuleToString(M: LLVMModuleRef) -> *mut ::libc::c_char;
-    pub fn LLVMGetModuleInlineAsm(
-        M: LLVMModuleRef,
-        Len: *mut ::libc::size_t,
-    ) -> *const ::libc::c_char;
-    #[deprecated(since = "7.0", note = "Use LLVMSetModuleInlineAsm2 instead")]
-    pub fn LLVMSetModuleInlineAsm(M: LLVMModuleRef, Asm: *const ::libc::c_char);
-    pub fn LLVMSetModuleInlineAsm2(
-        M: LLVMModuleRef,
-        Asm: *const ::libc::c_char,
-        Len: ::libc::size_t,
-    );
-    pub fn LLVMAppendModuleInlineAsm(
-        M: LLVMModuleRef,
-        Asm: *const ::libc::c_char,
-        Len: ::libc::size_t,
-    );
+            String::from_utf8(
+                transmute::<&[i8], &[u8]>(slice::from_raw_parts(chars, len.assume_init())).to_vec()
+            ).unwrap()
+        }
+    }
 
-    pub fn LLVMGetNamedMetadata(
-        M: LLVMModuleRef,
-        Name: *const ::libc::c_char,
-        NameLen: ::libc::size_t,
-    ) -> LLVMNamedMDNodeRef;
-    pub fn LLVMGetOrInsertNamedMetadata(
-        M: LLVMModuleRef,
-        Name: *const ::libc::c_char,
-        NameLen: ::libc::size_t,
-    ) -> LLVMNamedMDNodeRef;
-    pub fn LLVMGetNamedMetadataName(
-        NamedMD: LLVMNamedMDNodeRef,
-        NameLen: *const ::libc::size_t,
-    ) -> *const ::libc::c_char;
-    pub fn LLVMGetNamedMetadataNumOperands(
-        M: LLVMModuleRef,
-        name: *const ::libc::c_char,
-    ) -> ::libc::c_uint;
-    pub fn LLVMGetNamedMetadataOperands(
-        M: LLVMModuleRef,
-        name: *const ::libc::c_char,
-        Dest: *mut LLVMValueRef,
-    );
-    pub fn LLVMAddNamedMetadataOperand(
-        M: LLVMModuleRef,
-        name: *const ::libc::c_char,
-        Val: LLVMValueRef,
-    );
+    pub fn set_module_identifier(&self, str: &str) {
+        unsafe { LLVMSetModuleIdentifier(self.1.as_ptr(), to_c_string(Some(str)).as_ptr(), str.len()) }
+    }
 
-    pub fn LLVMGetModuleContext(M: LLVMModuleRef) -> LLVMContextRef;
-    #[deprecated(since = "12.0.0", note = "Use LLVMGetTypeByName2 instead")]
-    pub fn LLVMGetTypeByName(M: LLVMModuleRef, Name: *const ::libc::c_char) -> LLVMTypeRef;
-    pub fn LLVMGetFirstNamedMetadata(M: LLVMModuleRef) -> LLVMNamedMDNodeRef;
-    pub fn LLVMGetLastNamedMetadata(M: LLVMModuleRef) -> LLVMNamedMDNodeRef;
-    pub fn LLVMAddFunction(
-        M: LLVMModuleRef,
-        Name: *const ::libc::c_char,
-        FunctionTy: LLVMTypeRef,
-    ) -> LLVMValueRef;
-    pub fn LLVMGetNamedFunction(M: LLVMModuleRef, Name: *const ::libc::c_char) -> LLVMValueRef;
-    pub fn LLVMGetFirstFunction(M: LLVMModuleRef) -> LLVMValueRef;
-    pub fn LLVMGetLastFunction(M: LLVMModuleRef) -> LLVMValueRef;
-    // Core->Values->Constants->Global Variables
-    pub fn LLVMAddGlobal(
-        M: LLVMModuleRef,
-        Ty: LLVMTypeRef,
-        Name: *const ::libc::c_char,
-    ) -> LLVMValueRef;
-    pub fn LLVMAddGlobalInAddressSpace(
-        M: LLVMModuleRef,
-        Ty: LLVMTypeRef,
-        Name: *const ::libc::c_char,
-        AddressSpace: ::libc::c_uint,
-    ) -> LLVMValueRef;
-    pub fn LLVMGetNamedGlobal(M: LLVMModuleRef, Name: *const ::libc::c_char) -> LLVMValueRef;
-    pub fn LLVMGetFirstGlobal(M: LLVMModuleRef) -> LLVMValueRef;
-    pub fn LLVMGetLastGlobal(M: LLVMModuleRef) -> LLVMValueRef;
+    pub fn get_source_file_name(&self) -> String {
+        unsafe {
+            let mut len = MaybeUninit::uninit();
+            let chars = LLVMGetSourceFileName(self.1.as_ptr(), len.as_mut_ptr());
 
+            String::from_utf8(
+                transmute::<&[i8], &[u8]>(slice::from_raw_parts(chars, len.assume_init())).to_vec()
+            ).unwrap()
+        }
+    }
 
-    // Core->Values->Constants->Global Aliases
-    pub fn LLVMGetNamedGlobalAlias(
-        M: LLVMModuleRef,
-        Name: *const ::libc::c_char,
-        NameLen: ::libc::size_t,
-    ) -> LLVMValueRef;
-    pub fn LLVMGetFirstGlobalAlias(M: LLVMModuleRef) -> LLVMValueRef;
-    pub fn LLVMGetLastGlobalAlias(M: LLVMModuleRef) -> LLVMValueRef;
-    pub fn LLVMGetNextGlobalAlias(GA: LLVMValueRef) -> LLVMValueRef;
-    pub fn LLVMGetPreviousGlobalAlias(GA: LLVMValueRef) -> LLVMValueRef;
-    pub fn LLVMAliasGetAliasee(Alias: LLVMValueRef) -> LLVMValueRef;
-    pub fn LLVMAliasSetAliasee(Alias: LLVMValueRef, Aliasee: LLVMValueRef);
+    pub fn get_data_layout_str(&self) -> &str {
+        unsafe { from_c_string(LLVMGetDataLayoutStr(self.1.as_ptr())) }
+    }
 
-    pub fn LLVMAddAlias2(
-        M: LLVMModuleRef,
-        ValueTy: LLVMTypeRef,
-        AddrSpace: ::libc::c_uint,
-        Aliasee: LLVMValueRef,
-        Name: *const ::libc::c_char,
-    ) -> LLVMValueRef;
-    pub fn LLVMAddGlobalIFunc(
-        M: LLVMModuleRef,
-        Name: *const ::libc::c_char,
-        NameLen: ::libc::size_t,
-        Ty: LLVMTypeRef,
-        AddrSpace: ::libc::c_uint,
-        Resolver: LLVMValueRef,
-    ) -> LLVMValueRef;
+    pub fn get_target(&self) -> TargetTriple {
+        TargetTriple::from_str(unsafe { from_c_string(LLVMGetTarget(self.1.as_ptr())) })
+    }
 
-    /// Obtain a GlobalIFunc value from a Module by its name.
-    pub fn LLVMGetNamedGlobalIFunc(
-        M: LLVMModuleRef,
-        Name: *const ::libc::c_char,
-        NameLen: ::libc::size_t,
-    ) -> LLVMValueRef;
+    pub fn copy_module_flags_metadata(&self) -> ModuleFlagEntries {
+        unsafe {
+            let mut len = MaybeUninit::uninit();
+            let flags = LLVMCopyModuleFlagsMetadata(self.1.as_ptr(), len.as_mut_ptr());
 
-    /// Obtain an iterator to the first GlobalIFunc in a Module.
-    pub fn LLVMGetFirstGlobalIFunc(M: LLVMModuleRef) -> LLVMValueRef;
+            ModuleFlagEntries(flags, len.assume_init())
+        }
+    }
 
-    /// Obtain an iterator to the last GlobalIFunc in a Module.
-    pub fn LLVMGetLastGlobalIFunc(M: LLVMModuleRef) -> LLVMValueRef;
+    pub fn get_module_flag(&self, key: &str) -> Metadata {
+        Metadata::from_raw(unsafe {
+            NonNull::new_unchecked(
+                LLVMGetModuleFlag(self.1.as_ptr(), to_c_string(Some(key)).as_ptr(), key.len())
+            )
+        })
+    }
 
-    pub fn LLVMCreateModuleProviderForExistingModule(M: LLVMModuleRef) -> LLVMModuleProviderRef;
+    pub fn add_module_flag(&self, behavior: ModuleFlagBehavior, key: &str, value: Metadata) {
+        unsafe {
+            LLVMAddModuleFlag(
+                self.1.as_ptr(),
+                transmute(behavior),
+                to_c_string(Some(key)).as_ptr(),
+                key.len(),
+                value.as_raw().as_ptr()
+            )
+        }
+    }
 
-    pub fn LLVMLinkModules2(Dest: LLVMModuleRef, Src: LLVMModuleRef) -> LLVMBool;
+    pub fn dump_module(&self) {
+        unsafe { LLVMDumpModule(self.1.as_ptr()); }
+    }
 
+    pub fn print_module_to_file(&self, filename: &str) -> Result<(), Error> {
+        unsafe {
+            let mut message = MaybeUninit::uninit();
+            let result = LLVMPrintModuleToFile(self.1.as_ptr(), to_c_string(Some(filename)).as_ptr(), message.as_mut_ptr()) ;
 
+            // Verify if condition is valid
+            if result == 0 {
+                Ok(())
+            } else {
+                Err(Error::create(from_c_string(message.assume_init())))
+            }
+        }
+    }
+
+    pub fn print_module_to_string(&self) -> &str {
+        unsafe { from_c_string(LLVMPrintModuleToString(self.1.as_ptr())) }
+    }
+
+    pub fn get_module_inline_asm(&self) -> String {
+        unsafe {
+            let mut len = MaybeUninit::uninit();
+            let chars = LLVMGetModuleInlineAsm(self.1.as_ptr(), len.as_mut_ptr());
+
+            String::from_utf8(
+                transmute::<&[i8], &[u8]>(slice::from_raw_parts(chars, len.assume_init())).to_vec()
+            ).unwrap()
+        }
+    }
+
+    pub fn set_module_inline_asm(&self, asm: &str) {
+        unsafe { LLVMSetModuleInlineAsm2(self.1.as_ptr(), to_c_string(Some(asm)).as_ptr(), asm.len()); }
+    }
+
+    pub fn append_module_inline_asm(&self, asm: &str) {
+        unsafe { LLVMAppendModuleInlineAsm(self.1.as_ptr(), to_c_string(Some(asm)).as_ptr(), asm.len()); }
+    }
+
+    // TODO: pub fn GetNamedMetadata(&self, name: &str) -> LLVMNamedMDNodeRef;
+    // TODO: pub fn GetOrInsertNamedMetadata(&self, Name: *const ::libc::c_char, NameLen: ::libc::size_t, ) -> LLVMNamedMDNodeRef;
+    // TODO: pub fn GetNamedMetadataName(&self, NameLen: *const ::libc::size_t, ) -> *const ::libc::c_char;
+    // TODO: pub fn GetNamedMetadataNumOperands(&self, name: *const ::libc::c_char, ) -> ::libc::c_uint;
+    // TODO: pub fn GetNamedMetadataOperands(&self, name: *const ::libc::c_char, Dest: *mut LLVMValueRef, );
+    // TODO: pub fn AddNamedMetadataOperand(&self, name: *const ::libc::c_char, Val: LLVMValueRef, );
+
+    // TODO: pub fn GetModuleContext(&self) -> LLVMContextRef;
+    // TODO: pub fn GetFirstNamedMetadata(&self) -> LLVMNamedMDNodeRef;
+    // TODO: pub fn GetLastNamedMetadata(&self) -> LLVMNamedMDNodeRef;
+    // TODO: pub fn AddFunction(&self, Name: *const ::libc::c_char, FunctionTy: LLVMTypeRef, ) -> LLVMValueRef;
+    // TODO: pub fn GetNamedFunction(&self, Name: *const ::libc::c_char) -> LLVMValueRef;
+    // TODO: pub fn GetFirstFunction(&self) -> LLVMValueRef;
+    // TODO: pub fn GetLastFunction(&self) -> LLVMValueRef;
+    // TODO: // Core->Values->Constants->Global Variables
+    // TODO: pub fn AddGlobal(&self, Ty: LLVMTypeRef, Name: *const ::libc::c_char, ) -> LLVMValueRef;
+    // TODO: pub fn AddGlobalInAddressSpace(&self, Ty: LLVMTypeRef, Name: *const ::libc::c_char, AddressSpace: ::libc::c_uint, ) -> LLVMValueRef;
+    // TODO: pub fn GetNamedGlobal(&self, Name: *const ::libc::c_char) -> LLVMValueRef;
+    // TODO: pub fn GetFirstGlobal(&self) -> LLVMValueRef;
+    // TODO: pub fn GetLastGlobal(&self) -> LLVMValueRef;
+
+    // TODO: // Core->Values->Constants->Global Aliases
+    // TODO: pub fn GetNamedGlobalAlias(&self, Name: *const ::libc::c_char, NameLen: ::libc::size_t, ) -> LLVMValueRef;
+    // TODO: pub fn GetFirstGlobalAlias(&self) -> Value;
+    // TODO: pub fn GetLastGlobalAlias(&self) -> LLVMValueRef;
+
+    // TODO: pub fn LLVMAddAlias2(&self, ValueTy: LLVMTypeRef, AddrSpace: ::libc::c_uint, Aliasee: LLVMValueRef, Name: *const ::libc::c_char, ) -> LLVMValueRef;
+    // TODO: pub fn LLVMAddGlobalIFunc(&self, Name: *const ::libc::c_char, NameLen: ::libc::size_t, Ty: LLVMTypeRef, AddrSpace: ::libc::c_uint, Resolver: LLVMValueRef, ) -> LLVMValueRef;
+    // TODO: pub fn LLVMGetNamedGlobalIFunc(&self, Name: *const ::libc::c_char, NameLen: ::libc::size_t, ) -> LLVMValueRef;
+    // TODO: pub fn LLVMGetFirstGlobalIFunc(&self) -> LLVMValueRef;
+    // TODO: pub fn LLVMGetLastGlobalIFunc(&self) -> LLVMValueRef;
+    // TODO: pub fn LLVMCreateModuleProviderForExistingModule(&self) -> LLVMModuleProviderRef;
+
+    pub fn link(dest: Module, src: Module) -> bool {
+        unsafe {
+            LLVMLinkModules2(dest.1.as_ptr(), src.1.as_ptr()) != 0
+        }
+    }
+
+    pub fn get_module_data_layout(&self) -> TargetData {
+        TargetData::from_raw(unsafe {
+            NonNull::new_unchecked(
+                LLVMGetModuleDataLayout(self.1.as_ptr())
+            )
+        })
+    }
+    pub fn set_module_data_layout(&self, target_data: TargetData) {
+        unsafe { LLVMSetModuleDataLayout(self.1.as_ptr(), target_data.as_raw().as_ptr()); }
+    }
 }
 
 impl ToString for Module<'_> {
@@ -358,21 +346,42 @@ impl Clone for Module<'_> {
     }
 }
 
+pub struct ModuleFlagEntries(*mut LLVMModuleFlagEntry, usize);
 
-pub fn LLVMDisposeModuleFlagsMetadata(Entries: *mut LLVMModuleFlagEntry);
-pub fn LLVMModuleFlagEntriesGetFlagBehavior(
-    Entries: *mut LLVMModuleFlagEntry,
-    Index: ::libc::c_uint,
-) -> LLVMModuleFlagBehavior;
-pub fn LLVMModuleFlagEntriesGetKey(
-    Entries: *mut LLVMModuleFlagEntry,
-    Index: ::libc::c_uint,
-    Len: *mut ::libc::size_t,
-) -> *const ::libc::c_char;
-pub fn LLVMModuleFlagEntriesGetMetadata(
-    Entries: *mut LLVMModuleFlagEntry,
-    Index: ::libc::c_uint,
-) -> LLVMMetadataRef;
+impl ModuleFlagEntries {
+    pub fn get_flag_behavior(&self, index: u32) -> ModuleFlagBehavior {
+        unsafe {
+            transmute(LLVMModuleFlagEntriesGetFlagBehavior(
+                self.0, index,
+            ))
+        }
+    }
 
-pub fn LLVMGetNextNamedMetadata(NamedMDNode: LLVMNamedMDNodeRef) -> LLVMNamedMDNodeRef;
-pub fn LLVMGetPreviousNamedMetadata(NamedMDNode: LLVMNamedMDNodeRef) -> LLVMNamedMDNodeRef;
+    pub fn get_key(&self, index: u32) -> String {
+        unsafe {
+            let mut len = MaybeUninit::uninit();
+            let chars = LLVMModuleFlagEntriesGetKey(self.0, index, len.as_mut_ptr());
+
+            String::from_utf8(
+                transmute::<&[i8], &[u8]>(slice::from_raw_parts(chars, len.assume_init())).to_vec()
+            ).unwrap()
+        }
+    }
+
+    pub fn get_metadata(&self, index: u32) -> Metadata {
+        Metadata::from_raw(unsafe {
+            NonNull::new_unchecked(
+                LLVMModuleFlagEntriesGetMetadata(self.0, index)
+            )
+        })
+    }
+}
+
+impl Drop for ModuleFlagEntries {
+    fn drop(&mut self) {
+        unsafe { LLVMDisposeModuleFlagsMetadata(self.0); }
+    }
+}
+
+// TODO: pub fn LLVMGetNextNamedMetadata(NamedMDNode: LLVMNamedMDNodeRef) -> LLVMNamedMDNodeRef;
+// TODO: pub fn LLVMGetPreviousNamedMetadata(NamedMDNode: LLVMNamedMDNodeRef) -> LLVMNamedMDNodeRef;

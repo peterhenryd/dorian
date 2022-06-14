@@ -4,7 +4,7 @@ pub use crate::llvm::FloatPredicate as CmpOp;
 use crate::types::float::FloatType;
 use crate::types::Type;
 use crate::value::data::BuildValue;
-use crate::value::{LlvmValue, Value};
+use crate::value::{LlvmValue, NonAnyValue, Value};
 
 /// Represents a floating-point value.
 #[derive(Debug, Copy, Clone)]
@@ -25,6 +25,8 @@ impl Value for FloatValue {
         &self.1
     }
 }
+
+impl NonAnyValue for FloatValue {}
 
 /// Represents a binary operation that a floating-point value may undergo.
 pub enum BinOp {

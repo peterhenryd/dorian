@@ -1,5 +1,4 @@
-//! Remark diagnostics library.
-use prelude::LLVMBool;
+/* TODO: this whole module
 
 #[repr(C)]
 pub enum LLVMRemarkType {
@@ -132,3 +131,6 @@ extern "C" {
     /// Returns the version of the remarks library.
     pub fn LLVMRemarkVersion() -> u32;
 }
+
+
+ */

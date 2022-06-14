@@ -19,8 +19,12 @@ impl IntType {
         }
     }
 
-    pub fn const_int_from_str(&self, str: &str, radix: u8) -> IntValue {
-        unsafe { IntValue::new_unchecked(self.0.const_int_from_str(str, radix), *self) }
+    pub fn const_int_from_str(&self, str: &str, radix: u8) -> Const<IntValue> {
+        unsafe {
+            Const::new_unchecked(
+                IntValue::new_unchecked(self.0.const_int_of_string(str, radix), *self)
+            )
+        }
     }
 }
 

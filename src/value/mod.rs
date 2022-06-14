@@ -5,12 +5,17 @@ pub mod float;
 pub mod int;
 pub mod ptr;
 pub mod fun;
+pub mod cmp;
+pub mod vector;
 
 use crate::llvm::types::TypeKind;
 pub(crate) use crate::llvm::value::Value as LlvmValue;
-use crate::types::Type;
+use crate::types::{Raw, Type};
+use crate::value::any::AnyValue;
 use crate::value::int::IntValue;
 use crate::value::ptr::PtrValue;
+
+pub trait NonAnyValue: Value {}
 
 /// Represents an instance of a type, also known as a value.
 pub trait Value {
@@ -18,7 +23,7 @@ pub trait Value {
     type Type: Type;
 
     /// Creates a value from an [crate::llvm::value::Value].
-    unsafe fn new_unchecked(value: crate::llvm::value::Value, _: Self::Type) -> Self
+    unsafe fn new_unchecked(value: crate::llvm::value::Value, ty: Self::Type) -> Self
     where
         Self: Sized;
 
@@ -49,7 +54,7 @@ pub trait Value {
                 self.get_type().get_llvm_type().get_pointing_type()
             };
 
-            if V::Type::valid_kinds().contains(&ptr.get_kind()) {
+            if Type::valid_kinds().contains(&ptr.get_kind()) {
                 return Some(unsafe {
                     PtrValue::new_unchecked(
                         self.get_llvm_value(),
@@ -60,5 +65,16 @@ pub trait Value {
         }
 
         None
+    }
+}
+
+impl<V: NonAnyValue> From<V> for AnyValue {
+    fn from(value: V) -> Self {
+        unsafe {
+            AnyValue::new_unchecked(
+                value.get_llvm_value(),
+                Raw::from_llvm_type_unchecked(value.get_type().get_llvm_type())
+            )
+        }
     }
 }
