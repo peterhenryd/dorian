@@ -1,4 +1,6 @@
 # Dorian
+![Lines of code](https://img.shields.io/tokei/lines/github/peterhenryd/dorian)
+![Crates.io (recent)](https://img.shields.io/crates/dr/dorian)
 
 🚧 **Disclaimer:** Dorian is a BIG work-in-progress; use with caution!
 
