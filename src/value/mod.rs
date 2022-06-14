@@ -54,7 +54,7 @@ pub trait Value {
                 self.get_type().get_llvm_type().get_pointing_type()
             };
 
-            if Type::valid_kinds().contains(&ptr.get_kind()) {
+            if V::Type::valid_kinds().contains(&ptr.get_kind()) {
                 return Some(unsafe {
                     PtrValue::new_unchecked(
                         self.get_llvm_value(),
@@ -65,6 +65,11 @@ pub trait Value {
         }
 
         None
+    }
+
+    /// Will return a [Some] of an [PtrValue] if the value is an underlying pointer value.
+    fn as_any_value(&self) -> AnyValue {
+        unsafe { AnyValue::new_inferred(self.get_llvm_value()) }
     }
 }
 

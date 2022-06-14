@@ -50,18 +50,18 @@ impl<'a, R: Type> Block<'a, R> {
         }
     }
 
-    pub fn if_statement(&mut self, cmp: CmpValue, then: Block<'a, R>, otherwise: Block<'a, R>) {
+    pub fn if_statement(&mut self, cmp: CmpValue, then: &Block<'a, R>, otherwise: &Block<'a, R>) {
         self.1.build_cond_br(cmp.get_llvm_value(), then.2, otherwise.2);
     }
 
-    pub fn call_fun<V: Value>(&mut self, fun: &Fun<V::Type>, args: Vec<&dyn Into<AnyValue>>) -> V {
+    pub fn call_fun<V: Value>(&mut self, fun: &Fun<V::Type>, args: Vec<&AnyValue>) -> V {
         unsafe {
             V::new_unchecked(
                 self.1.build_call(
                     fun.get_return_type().get_llvm_type(),
                     fun.1,
                     args.iter()
-                        .map(|value| Into::<AnyValue>::into(value).get_llvm_value())
+                        .map(|value| value.get_llvm_value())
                         .collect(),
                     None),
                 fun.get_return_type()
