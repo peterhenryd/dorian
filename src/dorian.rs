@@ -28,11 +28,13 @@ impl Dorian {
     pub fn create_module(&self, name: &str) -> Module {
         Module::from_llvm(self, self.0.create_module(name))
     }
+}
 
-    /// TODO: is this okay idk
-    pub fn is_multithreaded() -> bool {
-        unsafe {
-            LLVMIsMultithreaded() != 0
-        }
+/// Returns whether LLVM is multithreaded.
+///
+/// Use the LLVM_ENABLE_THREADS flag to specify whether to run multithreaded.
+pub fn is_llvm_multithreaded() -> bool {
+    unsafe {
+        LLVMIsMultithreaded() != 0
     }
 }

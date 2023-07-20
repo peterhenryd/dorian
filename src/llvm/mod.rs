@@ -17,7 +17,7 @@ pub mod execution_engine;
 pub mod fun;
 pub mod module;
 pub mod opcode;
-pub mod target;
+pub mod targets;
 pub mod types;
 pub mod value;
 pub mod memory_buffer;
@@ -112,7 +112,6 @@ pub enum AddressSpace {
     Local,
 }
 
-
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum RelocMode {
@@ -143,7 +142,6 @@ pub enum CodeGenFileType {
     Assembly = 0,
     Object = 1,
 }
-
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq)]

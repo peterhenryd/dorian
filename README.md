@@ -1,41 +1,31 @@
-# Dorian
-![Lines of code](https://img.shields.io/tokei/lines/github/peterhenryd/dorian)
-![Crates.io (recent)](https://img.shields.io/crates/dr/dorian)
+# dorian
 
-🚧 **Disclaimer:** Dorian is a BIG work-in-progress; use with caution!
+Dorian is a Rusty type-safe high-level abstraction for LLVM.
 
-Dorian is an intuitive high-level abstraction for LLVM, written in Rust with only one dependency (LLVM!).
+## Installing
 
-### ⛵What it does
+Add Dorian to your cargo project: `cargo add dorian`
 
-Dorian takes the very complex library, LLVM, and boils it down
-to concepts that are familiar with everyday programmers.
+Dorian uses `llvm-sys` as its sole dependency for LLVM, so we recommend your look at
+[their page](https://crates.io/crates/llvm-sys/110.0.1) for instructions on how to install LLVM
+and to make sure that Rust can find it.
 
-Streamline the development of your programming language or
-any other project, and severely reduce the amount of unnecessary
-boilerplate with Dorian!
+Check out [EXAMPLES.md](EXAMPLES.md) for a list of simple applications built using Dorian.
 
-### ℹ️ How to use
+## Stability
 
-Grab the latest version on [crates.io](https://crates.io/crates/dorian) to get started!
+Dorian currently offers no guarantee of non-breaking API changes across updates, as changes are
+constantly being made to improve the utility of the API. Furthermore, the library remains
+largely untested, so while most of the code *likely* works, we can't guarantee it.
 
-There's also some [examples](./examples) in this repository that outline how to use the library.
+Examples are available, and the API is built to be intuitive, so you likely won't run into big
+issues using Dorian for a hobby project, it is not recommended for a production context.
 
-### 🚧 State of development
+## Transition from LLVM
 
-Take a look at the [complete breakdown](./llvm_comparison.md) of all the LLVM
-functions and their Dorian equivalents to see where the project
-is at and how suited it is for your project.
+Check out [LLVM_COMPARISON.md](LLVM_COMPARISON.md) for a complete analogous comparison of the
+LLVM and Dorian API.
 
-### 💾 In terms of LLVM
+## Contributing
 
-Dorian is very analogous to LLVM in terms of basic structures; however,
-when it comes to higher-level concepts, Dorian quickly diverges
-from LLVM for the sake of ease-of-use.
-
-### 📝 How to contribute
-Currently, the project is riddled with little adequately-descriptive 
-TODOs everywhere. 
-
-Feel free to fix an issue that any TODO addresses, and open
- a pull request.
+Check out [CONTRIBUTING.md](CONTRIBUTING.md)

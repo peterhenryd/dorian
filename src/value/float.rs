@@ -1,6 +1,6 @@
 use crate::fun::block::Block;
 use crate::llvm::builder::Builder;
-pub use crate::llvm::FloatPredicate as CmpOp;
+use crate::llvm::FloatPredicate as CmpOp;
 use crate::types::float::FloatType;
 use crate::types::Type;
 use crate::value::data::BuildValue;

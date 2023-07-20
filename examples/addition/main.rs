@@ -1,12 +1,5 @@
-use dorian::dorian::Dorian;
+use dorian::prelude::*;
 use dorian::llvm::execution_engine::ExtFn;
-use dorian::llvm::OptimizationLevel;
-use dorian::types::CreateType;
-use dorian::types::fun::FunData;
-use dorian::types::int::IntData;
-use dorian::value::data::BuildValue;
-use dorian::value::int::{BinOp, Int};
-use dorian::value::Value;
 
 fn main() {
     let dorian = Dorian::new();
@@ -23,7 +16,7 @@ fn main() {
         let lhs = lhs.as_int_value().unwrap();
         let rhs = rhs.as_int_value().unwrap();
 
-        let result = Int::Bin(BinOp::Add, &lhs, &rhs).build(&entry);
+        let result = Int::Bin(IntBinOp::Add, &lhs, &rhs).build(&entry);
 
         entry.return_value(&result);
     }

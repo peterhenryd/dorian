@@ -1,13 +1,14 @@
-## Compared to LLVM
+## Comparison to LLVM
 
-Dorian has _2 levels of abstraction_, and while everything in LLVM
-exists in Dorian at the first level of abstraction, at the second
-level of abstraction, much of LLVM is not featured.
+Dorian has 2 levels of abstraction, an LLVM-analogous yet library-compatible abstraction, and then a high-level
+intuitive abstraction that is appropriate for most applications.
 
-Dorian does not use any deprecated LLVM functions.
+Dorian does not acknowledge any deprecated LLVM functions. Moreover, Dorian does not acknowledge functions
+that don't require an LLVM context, if a similar function exists that does require a LLVM context.
 
-Below are listed all the modules in LLVM and their parts, and
-what equivalent Dorian has to it.
+Listed below are all the modules that LLVM features, and the Dorian equivalent, if such exists.
+
+This document is useful for migrating 
 
 <details>
   <summary>analysis</summary>

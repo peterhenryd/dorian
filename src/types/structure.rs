@@ -4,14 +4,14 @@ use crate::llvm::types::TypeKind;
 
 /// Represents an anonymous structure.
 #[derive(Debug, Copy, Clone)]
-pub struct Struct<'a> {
+pub struct StructData<'a> {
     fields: &'a [&'a dyn Type],
     is_packed: bool
 }
 
-impl<'a> Struct<'a> {
-    pub fn new(fields: &'a [&'a dyn Type]) -> Struct<'a> {
-        Struct { fields, is_packed: false }
+impl<'a> StructData<'a> {
+    pub fn new(fields: &'a [&'a dyn Type]) -> StructData<'a> {
+        StructData { fields, is_packed: false }
     }
 
     pub fn with_packed(mut self, is_packed: bool) -> Self {
@@ -19,12 +19,12 @@ impl<'a> Struct<'a> {
         self
     }
 
-    pub fn with_name(self, name: &'a str) -> NamedStruct<'a> {
-        NamedStruct { r#struct: self, name }
+    pub fn with_name(self, name: &'a str) -> NamedStructData<'a> {
+        NamedStructData { r#struct: self, name }
     }
 }
 
-impl<'a> CreateType for Struct<'a> {
+impl<'a> CreateType for StructData<'a> {
     type Type = StructType;
 
     fn create(self, dorian: &Dorian) -> Self::Type {
@@ -43,12 +43,12 @@ impl<'a> CreateType for Struct<'a> {
 
 /// Represents a permanent structure type with a name.
 #[derive(Debug, Copy, Clone)]
-pub struct NamedStruct<'a> {
-    r#struct: Struct<'a>,
+pub struct NamedStructData<'a> {
+    r#struct: StructData<'a>,
     name: &'a str,
 }
 
-impl<'a> CreateType for NamedStruct<'a> {
+impl<'a> CreateType for NamedStructData<'a> {
     type Type = StructType;
 
     fn create(self, dorian: &Dorian) -> Self::Type {

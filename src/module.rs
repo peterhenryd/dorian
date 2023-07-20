@@ -15,13 +15,16 @@ impl<'a> Module<'a> {
         Module(dorian, llvm_module)
     }
 
+    /// Borrows the internal [LlvmModule].
     pub fn get_inner(&self) -> &LlvmModule<'a> {
         &self.1
     }
 
+    /// Adds a function to the current module, and returns a [Fun] for adding a body.
     pub fn add_fn<R: Type>(&mut self, name: &str, fun_type: &FunType<R>) -> Fun<'a, R> {
         unsafe { Fun::new(self.0, self.1.add_fun(name, fun_type.get_llvm_type())) }
     }
+
 
     #[inline(always)]
     pub fn create_execution_engine(
