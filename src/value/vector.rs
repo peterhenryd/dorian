@@ -1,4 +1,5 @@
+use inkwell::values::VectorValue as InkwellVectorValue;
 use crate::types::vector::VectorType;
-use crate::value::{LlvmValue, Value};
+use crate::value::{Value};
 
-pub struct VectorValue<V: Value>(LlvmValue, VectorType<V::Type>);
+pub struct VectorValue<'a, V: Value<'a>>(InkwellVectorValue<'a>, VectorType<'a, V::Type>);

@@ -1,5 +1,4 @@
-use llvm_sys::core::LLVMIsMultithreaded;
-use crate::llvm::context::Context;
+use inkwell::context::Context;
 use crate::module::Module;
 
 /// This structure encapsulates the [Context] for the sole purpose of creating modules (as well
@@ -10,7 +9,7 @@ pub struct Dorian(Context);
 
 impl Dorian {
     /// Creates a [Dorian] instance from a pre-existing [Context].
-    pub fn from_llvm(context: Context) -> Dorian {
+    pub fn from_inkwell(context: Context) -> Dorian {
         Dorian(context)
     }
 
@@ -21,20 +20,11 @@ impl Dorian {
 
     /// Creates a [Dorian] instance.
     pub fn new() -> Dorian {
-        Dorian::from_llvm(Context::new())
+        Dorian::from_inkwell(Context::create())
     }
 
     /// Creates a module under a [Dorian] instance.
     pub fn create_module(&self, name: &str) -> Module {
         Module::from_llvm(self, self.0.create_module(name))
-    }
-}
-
-/// Returns whether LLVM is multithreaded.
-///
-/// Use the LLVM_ENABLE_THREADS flag to specify whether to run multithreaded.
-pub fn is_llvm_multithreaded() -> bool {
-    unsafe {
-        LLVMIsMultithreaded() != 0
     }
 }

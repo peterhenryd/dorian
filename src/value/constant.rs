@@ -1,13 +1,14 @@
+use std::marker::PhantomData;
 use crate::value::Value;
 
 /// Represents a value that is evaluated at compile-time.
 #[derive(Debug, Copy, Clone)]
-pub struct Const<V: Value>(V);
+pub struct Const<'a, V: Value<'a>>(V, PhantomData<&'a ()>);
 
-impl<V: Value> Const<V> {
+impl<'a, V: Value<'a>> Const<'a, V> {
     /// Creates a [Const<V>] without checking if the given argument is actually a constant.
     pub unsafe fn new_unchecked(value: V) -> Self {
-        Const(value)
+        Const(value, PhantomData::default())
     }
 
     /// Borrow the internal value.

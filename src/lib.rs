@@ -32,9 +32,10 @@
 //!
 //! Dorian is licensed under the MIT license, found [here](LICENSE).
 
+pub extern crate inkwell;
+
 pub mod dorian;
 pub mod fun;
-pub mod llvm;
 pub mod module;
 pub mod types;
 pub mod value;
@@ -45,20 +46,23 @@ pub mod prelude {
         block::Block,
         Fun
     };
-    pub use crate::llvm::{
+    pub use crate::inkwell::{
         IntPredicate,
         FloatPredicate,
         AtomicOrdering,
         AtomicRMWBinOp,
         OptimizationLevel,
         AddressSpace,
-        RelocMode,
-        CodeModel,
-        CodeGenFileType,
-        Linkage,
-        ThreadLocalMode,
-        ModuleFlagBehavior,
-        InlineAsmDialect
+        InlineAsmDialect,
+        targets::{
+            RelocMode,
+            CodeModel,
+            FileType as TargetFileType
+        },
+        module::{
+            Linkage,
+            FlagBehavior as ModuleFlagBehavior,
+        }
     };
     pub use crate::module::Module;
     pub use crate::types::{

@@ -1,15 +1,17 @@
-use crate::types::{LlvmType, Type, CreateType};
-use crate::llvm::types::TypeKind;
+use crate::types::{Type, CreateType, TypeKind};
 use crate::dorian::Dorian;
 use std::marker::PhantomData;
+use inkwell::types::{AnyTypeEnum, ArrayType as InkwellArrayType};
 
 /// Represents an array type.
 #[derive(Debug, Copy, Clone)]
-pub struct ArrayType<T: Type>(LlvmType, PhantomData<T>);
+pub struct ArrayType<'a, T: Type<'a>>(InkwellArrayType<'a>, PhantomData<T>);
 
-impl<T: Type> Type for ArrayType<T> {
-    unsafe fn from_llvm_type_unchecked(llvm_type: LlvmType) -> Self where Self: Sized {
-        ArrayType(llvm_type, PhantomData::default())
+impl<'a, T: Type<'a>> Type<'a> for ArrayType<'a, T> {
+    type InkwellType = InkwellArrayType<'a>;
+
+    unsafe fn from_inkwell_type_unchecked(inkwell_type: InkwellArrayType<'a>) -> Self where Self: Sized {
+        ArrayType(inkwell_type, PhantomData::default())
     }
 
     fn valid_kinds() -> Vec<TypeKind> where Self: Sized {
@@ -18,7 +20,7 @@ impl<T: Type> Type for ArrayType<T> {
         ]
     }
 
-    fn get_llvm_type(&self) -> LlvmType {
+    fn get_inkwell_type(&self) -> InkwellArrayType<'a> {
         self.0
     }
 
@@ -29,21 +31,21 @@ impl<T: Type> Type for ArrayType<T> {
 
 /// Builder for array type.
 #[derive(Copy, Clone)]
-pub struct ArrayData<T: Type + Copy + Clone>(T, u32);
+pub struct ArrayData<'a, T: Type<'a> + Copy + Clone>(T, u32, PhantomData<&'a ()>);
 
-impl<T: Type + Copy + Clone> ArrayData<T> {
-    pub fn new(r#type: T, size: u32) -> ArrayData<T> {
-        ArrayData(r#type, size)
+impl<'a, T: Type<'a> + Copy + Clone> ArrayData<'a, T> {
+    pub fn new(r#type: T, size: u32) -> ArrayData<'a, T> {
+        ArrayData(r#type, size, PhantomData::default())
     }
 }
 
-impl<T: Type + Copy + Clone> CreateType for ArrayData<T> {
-    type Type = ArrayType<T>;
+impl<'a, T: Type<'a> + Copy + Clone> CreateType for ArrayData<'a, T> {
+    type Type = ArrayType<'a, T>;
 
-    fn create(self, _: &Dorian) -> Self::Type {
+    fn create(self, _: &Dorian) -> Self::Type<'_> {
         unsafe {
-            ArrayType::from_llvm_type_unchecked(
-                self.0.get_llvm_type().get_array_type(self.1)
+            ArrayType::from_inkwell_type_unchecked(
+                self.0.get_inkwell_type().get_array_type(self.1)
             )
         }
     }

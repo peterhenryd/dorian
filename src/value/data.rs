@@ -3,10 +3,10 @@ use crate::types::Type;
 use crate::value::Value;
 
 /// Represents a builder for values.
-pub trait BuildValue<'a> {
+pub trait BuildValue {
     /// The type of [Value] that is being built.
-    type Value: Value;
+    type Value<'a>: Value<'a>;
 
     /// Builds the value using a [Block].
-    fn build<R: Type>(&self, dorian: &Block<R>) -> Self::Value;
+    fn build<'a, R: Type<'a>>(&self, dorian: &'a Block<'a, R>) -> Self::Value<'a>;
 }

@@ -7,4 +7,4 @@ license-file = "LICENSE"
 homepage = "https://github.com/peterhenryd/dorian"
 
 [dependencies]
-llvm-sys = "140.0.2"
+inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", features = ["llvm14-0"] }

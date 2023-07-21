@@ -1,3 +1,4 @@
+use inkwell::OptimizationLevel;
 use dorian::prelude::*;
 use dorian::llvm::execution_engine::ExtFn;
 
@@ -23,7 +24,7 @@ fn main() {
 
     println!("{}", test.to_string());
 
-    let engine = test.create_execution_engine(OptimizationLevel::Aggressive);
+    let engine = test.create_jit_execution_engine(OptimizationLevel::Aggressive).unwrap();
     let add = engine.get_fun::<ExtFn<(i64, i64), i64>>("add").unwrap();
 
     assert_eq!(unsafe { add(5, 4) }, 9);

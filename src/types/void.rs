@@ -1,21 +1,24 @@
-use crate::types::{LlvmType, CreateType, Type};
+use std::marker::PhantomData;
+use inkwell::types::{AnyTypeEnum, VoidType as InkwellVoidType};
+use crate::types::{CreateType, Type, TypeKind};
 use crate::dorian::Dorian;
-use crate::llvm::types::TypeKind;
 
 /// Represents the void type (type with no possible values).
 #[derive(Debug, Copy, Clone)]
-pub struct VoidType(LlvmType);
+pub struct VoidType<'a>(InkwellVoidType<'a>);
 
-impl Type for VoidType {
-    unsafe fn from_llvm_type_unchecked(llvm_type: LlvmType) -> Self where Self: Sized {
-        VoidType(llvm_type)
+impl<'a> Type<'a> for VoidType<'a> {
+    type InkwellType = InkwellVoidType<'a>;
+
+    unsafe fn from_inkwell_type_unchecked(inkwell_type: AnyTypeEnum) -> Self where Self: Sized {
+        VoidType(inkwell_type.into_void_type())
     }
 
     fn valid_kinds() -> Vec<TypeKind> where Self: Sized {
         vec![TypeKind::Void]
     }
 
-    fn get_llvm_type(&self) -> LlvmType {
+    fn get_inkwell_type(&self) -> Self::InkwellType {
         self.0
     }
 
@@ -26,14 +29,20 @@ impl Type for VoidType {
 
 /// Builder for void type.
 #[derive(Debug, Copy, Clone)]
-pub struct VoidData;
+pub struct VoidData<'a>(PhantomData<&'a ()>);
 
-impl CreateType for VoidData {
-    type Type = VoidType;
+impl<'a> VoidData<'a> {
+    pub fn new() -> Self {
+        Self(PhantomData::default())
+    }
+}
 
-    fn create(self, dorian: &Dorian) -> Self::Type {
+impl<'a> CreateType for VoidData<'a> {
+    type Type = VoidType<'a>;
+
+    fn create(self, dorian: &Dorian) -> Self::Type<'_> {
         unsafe {
-            VoidType::from_llvm_type_unchecked(
+            VoidType::from_inkwell_type_unchecked(
                 dorian.get_context().get_void_type()
             )
         }

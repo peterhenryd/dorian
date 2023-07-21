@@ -1,22 +1,24 @@
+use inkwell::builder::Builder;
+use inkwell::values::IntValue as InkwellIntValue;
 use crate::fun::block::Block;
-use crate::llvm::builder::Builder;
 use crate::types::int::IntType;
 use crate::types::Type;
 use crate::value::data::BuildValue;
-use crate::value::{LlvmValue, NonAnyValue, Value};
+use crate::value::{NonAnyValue, Value};
 
 /// Represents an integer value.
 #[derive(Debug, Copy, Clone)]
-pub struct IntValue(LlvmValue, IntType);
+pub struct IntValue<'a>(InkwellIntValue<'a>, IntType<'a>);
 
-impl Value for IntValue {
-    type Type = IntType;
+impl<'a> Value<'a> for IntValue<'a> {
+    type Type = IntType<'a>;
+    type InkwellValue = InkwellIntValue<'a>;
 
-    unsafe fn new_unchecked(value: LlvmValue, int_type: IntType) -> IntValue {
+    unsafe fn new_unchecked(value: Self::InkwellValue, int_type: Self::Type) -> Self {
         IntValue(value, int_type)
     }
 
-    fn get_llvm_value(&self) -> LlvmValue {
+    fn get_inkwell_value(&self) -> Self::InkwellValue {
         self.0
     }
 
@@ -25,7 +27,7 @@ impl Value for IntValue {
     }
 }
 
-impl NonAnyValue for IntValue {}
+impl<'a> NonAnyValue<'a> for IntValue<'a> {}
 
 /// Represents a binary operation that an integer value may undergo.
 pub enum BinOp {
@@ -38,15 +40,13 @@ pub enum BinOp {
     Mul,
     NuwMul,
     NswMul,
-    UDiv,
-    SDiv,
-    ExactUDiv,
-    ExactSDiv,
-    URem,
-    SRem,
+    UnsignedDiv,
+    SignedDiv,
+    ExactSignedDiv,
+    UnsignedRem,
+    SignedRem,
     Shl,
-    LShr,
-    AShr,
+    Shr,
     And,
     Or,
     Xor,
@@ -62,35 +62,33 @@ pub enum UnaOp {
 
 /// Represents a collection of various operations that a integer may undergo.
 pub enum Int<'a> {
-    Bin(BinOp, &'a IntValue, &'a IntValue),
-    Una(UnaOp, &'a IntValue),
+    Bin(BinOp, &'a IntValue<'a>, &'a IntValue<'a>),
+    Una(UnaOp, &'a IntValue<'a>),
 }
 
-impl<'a> BuildValue<'a> for Int<'a> {
-    type Value = IntValue;
+impl<'a> BuildValue for Int<'a> {
+    type Value<'b> = IntValue<'b>;
 
-    fn build<R: Type>(&self, block: &Block<R>) -> Self::Value {
+    fn build<'b, R: Type<'b>>(&self, block: &'b Block<'b, R>) -> Self::Value<'b> {
         match self {
             Int::Bin(op, lhs, rhs) => {
                 let f = match op {
-                    BinOp::Add => Builder::build_add,
-                    BinOp::NuwAdd => Builder::build_nuw_add,
-                    BinOp::NswAdd => Builder::build_nsw_add,
-                    BinOp::Sub => Builder::build_sub,
-                    BinOp::NuwSub => Builder::build_nuw_sub,
-                    BinOp::NswSub => Builder::build_nsw_sub,
-                    BinOp::Mul => Builder::build_mul,
-                    BinOp::NuwMul => Builder::build_nuw_mul,
-                    BinOp::NswMul => Builder::build_nsw_mul,
-                    BinOp::UDiv => Builder::build_u_div,
-                    BinOp::SDiv => Builder::build_s_div,
-                    BinOp::ExactUDiv => Builder::build_exact_u_div,
-                    BinOp::ExactSDiv => Builder::build_exact_s_div,
-                    BinOp::URem => Builder::build_u_rem,
-                    BinOp::SRem => Builder::build_s_rem,
-                    BinOp::Shl => Builder::build_shl,
-                    BinOp::LShr => Builder::build_l_shr,
-                    BinOp::AShr => Builder::build_a_shr,
+                    BinOp::Add => Builder::build_int_add,
+                    BinOp::NuwAdd => Builder::build_int_nuw_add,
+                    BinOp::NswAdd => Builder::build_int_nsw_add,
+                    BinOp::Sub => Builder::build_int_sub,
+                    BinOp::NuwSub => Builder::build_int_nuw_sub,
+                    BinOp::NswSub => Builder::build_int_nsw_sub,
+                    BinOp::Mul => Builder::build_int_mul,
+                    BinOp::NuwMul => Builder::build_int_nuw_mul,
+                    BinOp::NswMul => Builder::build_int_nsw_mul,
+                    BinOp::UnsignedDiv => Builder::build_int_unsigned_div,
+                    BinOp::SignedDiv => Builder::build_int_signed_div,
+                    BinOp::ExactSignedDiv => Builder::build_int_exact_signed_div,
+                    BinOp::UnsignedRem => Builder::build_int_unsigned_rem,
+                    BinOp::SignedRem => Builder::build_int_signed_rem,
+                    BinOp::Shl => Builder::build_left_shift,
+                    BinOp::Shr => Builder::build_right_shift,
                     BinOp::And => Builder::build_and,
                     BinOp::Or => Builder::build_or,
                     BinOp::Xor => Builder::build_xor,
@@ -100,9 +98,9 @@ impl<'a> BuildValue<'a> for Int<'a> {
                     IntValue::new_unchecked(
                         f(
                             block.get_builder(),
-                            lhs.get_llvm_value(),
-                            rhs.get_llvm_value(),
-                            None,
+                            lhs.get_inkwell_value(),
+                            rhs.get_inkwell_value(),
+                            "" // TODO: names
                         ),
                         *lhs.get_type(),
                     )
@@ -118,7 +116,7 @@ impl<'a> BuildValue<'a> for Int<'a> {
 
                 unsafe {
                     IntValue::new_unchecked(
-                        f(block.get_builder(), val.get_llvm_value(), None),
+                        f(block.get_builder(), val.get_inkwell_value(), ""), //todo: names
                         *val.get_type(),
                     )
                 }

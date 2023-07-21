@@ -1,23 +1,25 @@
 use crate::dorian::Dorian;
-use crate::llvm::types::TypeKind;
-use crate::llvm::AddressSpace;
-use crate::types::{LlvmType, Type, CreateType};
+use crate::types::{Type, CreateType, TypeKind};
 use std::marker::PhantomData;
+use inkwell::AddressSpace;
+use inkwell::types::{AnyTypeEnum, PointerType};
 
 /// Represents a pointer type.
 #[derive(Debug, Copy, Clone)]
-pub struct PtrType<T: Type>(LlvmType, PhantomData<T>);
+pub struct PtrType<'a, T: Type<'a>>(PointerType<'a>, PhantomData<T>);
 
-impl<T: Type> Type for PtrType<T> {
-    unsafe fn from_llvm_type_unchecked(llvm_type: LlvmType) -> Self {
-        PtrType(llvm_type, PhantomData::default())
+impl<'a, T: Type<'a>> Type<'a> for PtrType<'a, T> {
+    type InkwellType = PointerType<'a>;
+
+    unsafe fn from_inkwell_type_unchecked(inkwell_type: AnyTypeEnum<'a>) -> Self {
+        PtrType(inkwell_type.into_pointer_type(), PhantomData::default())
     }
 
     fn valid_kinds() -> Vec<TypeKind> where Self: Sized {
         vec![TypeKind::Ptr]
     }
 
-    fn get_llvm_type(&self) -> LlvmType {
+    fn get_inkwell_type(&self) -> PointerType<'a> {
         self.0
     }
 
@@ -26,11 +28,11 @@ impl<T: Type> Type for PtrType<T> {
     }
 }
 
-impl<T: Type> PtrType<T> {
+impl<'a, T: Type<'a>> PtrType<'a, T> {
     pub fn fetch_pointing_type(&self) -> T {
         unsafe {
-            T::from_llvm_type_unchecked(
-                self.get_llvm_type().get_pointing_type()
+            T::from_inkwell_type_unchecked(
+                self.get_inkwell_type().get_pointing_type()
             )
         }
     }
@@ -38,19 +40,19 @@ impl<T: Type> PtrType<T> {
 
 /// Builder for pointer type.
 #[derive(Debug, Copy, Clone)]
-pub struct PtrData<T: Type>(T, AddressSpace);
+pub struct PtrData<'a, T: Type<'a>>(T, AddressSpace, PhantomData<&'a ()>);
 
-impl<T: Type> PtrData<T> {
+impl<'a, T: Type<'a>> PtrData<'a, T> {
     pub fn of(r#type: T, address_space: AddressSpace) -> Self {
-        PtrData(r#type, address_space)
+        PtrData(r#type, address_space, PhantomData::default())
     }
 }
 
-impl<T: Type + Copy + Clone> CreateType for PtrData<T> {
-    type Type = PtrType<T>;
+impl<'a, T: Type<'a> + Copy + Clone> CreateType for PtrData<'a, T> {
+    type Type = PtrType<'a, T>;
 
     #[inline(always)]
-    fn create(self, _: &Dorian) -> PtrType<T> {
-        unsafe { PtrType::from_llvm_type_unchecked(self.0.get_llvm_type().to_ptr_type(self.1)) }
+    fn create(self, _: &Dorian) -> PtrType<'a, T> {
+        unsafe { PtrType::from_inkwell_type_unchecked(self.0.get_inkwell_type().to_ptr_type(self.1)) }
     }
 }

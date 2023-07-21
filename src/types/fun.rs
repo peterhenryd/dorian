@@ -1,25 +1,27 @@
 use crate::dorian::Dorian;
-use crate::llvm::types::TypeKind;
-use crate::types::{LlvmType, Type, CreateType};
+use crate::types::{Type, CreateType, TypeKind, RawType};
 use std::marker::PhantomData;
+use inkwell::types::{AnyType, AnyTypeEnum, FunctionType};
 
 /// Represents a function type.
 #[derive(Debug, Copy, Clone)]
-pub struct FunType<R: Type>(LlvmType, PhantomData<R>);
+pub struct FunType<'a, R: Type<'a>>(FunctionType<'a>, PhantomData<R>);
 
-impl<R: Type> Type for FunType<R> {
-    unsafe fn from_llvm_type_unchecked(llvm_type: LlvmType) -> Self
+impl<'a, R: Type<'a>> Type<'a> for FunType<'a, R> {
+    type InkwellType = FunctionType<'a>;
+
+    unsafe fn from_inkwell_type_unchecked(inkwell_type: AnyTypeEnum<'a>) -> Self
     where
         Self: Sized,
     {
-        FunType(llvm_type, PhantomData::default())
+        FunType(inkwell_type.into_function_type(), PhantomData::default())
     }
 
     fn valid_kinds() -> Vec<TypeKind> where Self: Sized {
         vec![TypeKind::Fun]
     }
 
-    fn get_llvm_type(&self) -> LlvmType {
+    fn get_inkwell_type(&self) -> Self::InkwellType {
         self.0
     }
 
@@ -30,16 +32,16 @@ impl<R: Type> Type for FunType<R> {
 
 /// Builder for function type.
 #[derive(Debug, Clone)]
-pub struct FunData<'a, R: Type> {
-    pub parameters: Vec<&'a dyn Type>,
+pub struct FunData<'a, R: Type<'a>> {
+    pub parameters: Vec<RawType<'a>>,
     pub return_type: &'a R,
     pub is_var_arg: bool,
 }
 
-impl<'a, R: Type + Copy> FunData<'a, R> {
+impl<'a, R: Type<'a> + Copy> FunData<'a, R> {
     #[inline(always)]
     pub fn new(
-        parameters: Vec<&'a dyn Type>,
+        parameters: Vec<RawType<'a>>,
         return_type: &'a R,
         is_var_arg: bool,
     ) -> FunData<'a, R> {
@@ -51,15 +53,15 @@ impl<'a, R: Type + Copy> FunData<'a, R> {
     }
 }
 
-impl<'a, R: Type + Copy> CreateType for FunData<'a, R> {
-    type Type = FunType<R>;
+impl<'a, R: Type<'a> + Copy> CreateType for FunData<'a, R> {
+    type Type = FunType<'a, R>;
 
     #[inline(always)]
-    fn create(self, dorian: &Dorian) -> FunType<R> {
+    fn create(self, dorian: &Dorian) -> FunType<'a, R> {
         FunType(
             dorian.get_context().get_fun_type(
-                self.parameters.iter().map(|t| t.get_llvm_type()).collect(),
-                self.return_type.get_llvm_type(),
+                self.parameters.iter().map(|t| t.get_inkwell_type()).collect(),
+                self.return_type.get_inkwell_type(),
                 self.is_var_arg,
             ),
             PhantomData::default(),

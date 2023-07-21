@@ -70,7 +70,7 @@ fn main() {
         }
     }
 
-    let execution_engine = module.create_execution_engine(OptimizationLevel::Aggressive);
+    let execution_engine = module.create_jit_execution_engine(OptimizationLevel::Aggressive);
 
     let fib = execution_engine.get_fun::<ExtFn<(u32,), u32>>("fib").unwrap();
 

@@ -1,15 +1,17 @@
+use inkwell::context::Context;
+use inkwell::types::{AnyTypeEnum, FloatType as InkwellFloatType};
 use crate::dorian::Dorian;
-use crate::llvm::context::Context;
-use crate::llvm::types::TypeKind;
-use crate::types::{LlvmType, Type, CreateType};
+use crate::types::{Type, CreateType, TypeKind};
 
 /// Represents a floating-point type.
 #[derive(Debug, Copy, Clone)]
-pub struct FloatType(LlvmType);
+pub struct FloatType<'a>(InkwellFloatType<'a>);
 
-impl Type for FloatType {
-    unsafe fn from_llvm_type_unchecked(llvm_type: LlvmType) -> Self {
-        Self(llvm_type)
+impl<'a> Type<'a> for FloatType<'a> {
+    type InkwellType = InkwellFloatType<'a>;
+
+    unsafe fn from_inkwell_type_unchecked(inkwell_type: AnyTypeEnum) -> Self {
+        Self(inkwell_type.into_float_type())
     }
 
     fn valid_kinds() -> Vec<TypeKind> where Self: Sized {
@@ -24,7 +26,7 @@ impl Type for FloatType {
         ]
     }
 
-    fn get_llvm_type(&self) -> LlvmType {
+    fn get_inkwell_type(&self) -> Self::InkwellType {
         self.0
     }
 
@@ -38,7 +40,6 @@ impl Type for FloatType {
 #[derive(Debug, Copy, Clone)]
 pub enum FloatData {
     F16 = 1,
-    BF16 = 18,
     F32 = 2,
     F64 = 3,
     X86F80 = 4,
@@ -47,20 +48,19 @@ pub enum FloatData {
 }
 
 impl CreateType for FloatData {
-    type Type = FloatType;
+    type Type<'a> = FloatType<'a>;
 
     #[inline(always)]
-    fn create(self, dorian: &Dorian) -> FloatType {
+    fn create<'a>(self, dorian: &'a Dorian) -> Self::Type<'a> {
         let f = match self {
-            FloatData::F16 => Context::get_f16_type,
-            FloatData::F32 => Context::get_f32_type,
-            FloatData::F64 => Context::get_f64_type,
-            FloatData::X86F80 => Context::get_x86_f80_type,
-            FloatData::BF16 => Context::get_bf16_type,
-            FloatData::F128 => Context::get_f128_type,
-            FloatData::PpcF128 => Context::get_ppc_f128_type,
+            FloatData::F16 => Context::f16_type,
+            FloatData::F32 => Context::f32_type,
+            FloatData::F64 => Context::f64_type,
+            FloatData::X86F80 => Context::x86_f80_type,
+            FloatData::F128 => Context::f128_type,
+            FloatData::PpcF128 => Context::ppc_f128_type,
         };
 
-        unsafe { FloatType::from_llvm_type_unchecked(f(dorian.get_context())) }
+        unsafe { FloatType::from_inkwell_type_unchecked(f(dorian.get_context())) }
     }
 }

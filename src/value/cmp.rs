@@ -1,26 +1,28 @@
-use crate::types::{Raw, Type};
-use crate::value::{LlvmValue, NonAnyValue, Value};
+use inkwell::values::AnyValueEnum;
+use crate::types::{RawType, Type};
+use crate::value::{NonAnyValue, Value};
 
 #[derive(Debug, Copy, Clone)]
-pub struct CmpValue(LlvmValue, Raw);
+pub struct CmpValue<'a>(AnyValueEnum<'a>, RawType<'a>);
 
-impl CmpValue {
-    pub unsafe fn new_inferred(value: LlvmValue) -> Self {
-        CmpValue(value, Raw::from_llvm_type_unchecked(value.get_type()))
+impl<'a> CmpValue<'a> {
+    pub unsafe fn new_inferred(inkwell_value: AnyValueEnum<'a>) -> Self {
+        CmpValue(inkwell_value, RawType::from_inkwell_type_unchecked(inkwell_value.get_type()))
     }
 }
 
-impl Value for CmpValue {
-    type Type = Raw;
+impl<'a> Value<'a> for CmpValue<'a> {
+    type Type = RawType<'a>;
+    type InkwellValue = AnyValueEnum<'a>;
 
-    unsafe fn new_unchecked(value: LlvmValue, raw: Self::Type) -> Self
+    unsafe fn new_unchecked(value: AnyValueEnum<'a>, raw: Self::Type) -> Self
         where
             Self: Sized,
     {
         CmpValue(value, raw)
     }
 
-    fn get_llvm_value(&self) -> LlvmValue {
+    fn get_inkwell_value(&self) -> Self::InkwellValue {
         self.0
     }
 
@@ -29,4 +31,4 @@ impl Value for CmpValue {
     }
 }
 
-impl NonAnyValue for CmpValue {}
+impl<'a> NonAnyValue<'a> for CmpValue<'a>{}

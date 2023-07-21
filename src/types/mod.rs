@@ -1,9 +1,8 @@
-pub(crate) use crate::llvm::types::Type as LlvmType;
-use crate::llvm::types::TypeKind;
 use crate::types::int::IntType;
 use crate::types::ptr::PtrType;
 use crate::dorian::Dorian;
 use std::fmt::Debug;
+use inkwell::types::{AnyType, AnyTypeEnum};
 
 pub mod void;
 pub mod float;
@@ -15,19 +14,20 @@ pub mod array;
 pub mod vector;
 
 /// Represents a type that a value has.
-pub trait Type: Debug {
+pub trait Type<'a>: Debug + Copy + Clone {
+    type InkwellType: AnyType<'a>;
+
     /// Creates a type from an [LlvmType].
-    unsafe fn from_llvm_type_unchecked(llvm_type: LlvmType) -> Self
+    unsafe fn from_inkwell_type_unchecked(inkwell_type: AnyTypeEnum<'a>) -> Self
     where
         Self: Sized;
 
-    // TODO: remember what this is for
     fn valid_kinds() -> Vec<TypeKind>
     where
         Self: Sized;
 
     /// Borrow the internal [LlvmType].
-    fn get_llvm_type(&self) -> LlvmType;
+    fn get_inkwell_type(&self) -> Self::InkwellType;
 
     /// Get the LLVM enumerable type that is represented by the implementation.
     fn get_kind(&self) -> TypeKind;
@@ -35,23 +35,23 @@ pub trait Type: Debug {
     /// Will return a [Some] of an [IntType] if the [Type] is an underlying integer type.
     fn as_int_type(&self) -> Option<IntType> {
         if let TypeKind::Int = self.get_kind() {
-            return Some(unsafe { IntType::from_llvm_type_unchecked(self.get_llvm_type()) });
+            return Some(unsafe { IntType::from_inkwell_type_unchecked(self.get_inkwell_type()) });
         }
 
         None
     }
 
     /// Will return a [Some] of a [PtrType<T>] if the [Type] is an underlying pointer type.
-    fn as_ptr_type<T: Type>(&self) -> Option<PtrType<T>> where Self: Sized {
+    fn as_ptr_type<T: Type<'a>>(&self) -> Option<PtrType<'a, T>> where Self: Sized {
         if let TypeKind::Ptr = self.get_kind() {
             let ptr = unsafe {
-                self.get_llvm_type().get_pointing_type()
+                self.get_inkwell_type().get_pointing_type()
             };
 
             if T::valid_kinds().contains(&ptr.get_kind()) {
                 return Some(unsafe {
-                    PtrType::from_llvm_type_unchecked(
-                        self.get_llvm_type(),
+                    PtrType::from_inkwell_type_unchecked(
+                        self.get_inkwell_type(),
                     )
                 });
             }
@@ -64,14 +64,16 @@ pub trait Type: Debug {
 /// Encapsulates a raw [LlvmType] that is not defined at compile-time.
 // TODO: is this struct ethical?
 #[derive(Debug, Copy, Clone)]
-pub struct Raw(LlvmType, TypeKind);
+pub struct RawType<'a>(AnyTypeEnum<'a>, TypeKind);
 
-impl Type for Raw {
-    unsafe fn from_llvm_type_unchecked(llvm_type: LlvmType) -> Self
+impl<'a> Type<'a> for RawType<'a> {
+    type InkwellType = AnyTypeEnum<'a>;
+
+    unsafe fn from_inkwell_type_unchecked(inkwell_type: AnyTypeEnum<'a>) -> Self
     where
         Self: Sized,
     {
-        Raw(llvm_type, TypeKind::of_llvm_type(&llvm_type))
+        RawType(inkwell_type, TypeKind::of_llvm_type(&inkwell_type))
     }
 
     fn valid_kinds() -> Vec<TypeKind> where Self: Sized {
@@ -99,7 +101,7 @@ impl Type for Raw {
         ]
     }
 
-    fn get_llvm_type(&self) -> LlvmType {
+    fn get_inkwell_type(&self) -> AnyTypeEnum {
         self.0
     }
 
@@ -111,8 +113,32 @@ impl Type for Raw {
 /// Builder for easily creating types.
 pub trait CreateType: Clone {
     /// The [Type] being built.
-    type Type: Type;
+    type Type<'a>: Type<'a>;
 
     /// Builds the [Type].
-    fn create(self, dorian: &Dorian) -> Self::Type;
+    fn create<'a>(self, dorian: &'a Dorian) -> Self::Type<'a>;
+}
+
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
+pub enum TypeKind {
+    Void,
+    F16,
+    F32,
+    F64,
+    X86F80,
+    BF16 ,
+    F128,
+    PpcF128,
+    Label,
+    Int,
+    Fun,
+    Struct,
+    Array,
+    Ptr,
+    Vector,
+    Metadata,
+    X86Mmx,
+    Token,
+    ScalableVector,
+    X86Amx,
 }

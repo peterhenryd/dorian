@@ -1,16 +1,16 @@
+use inkwell::targets::TargetData;
+use inkwell::types::{AnyTypeEnum, IntType as InkwellIntType};
 use crate::dorian::Dorian;
-use crate::llvm::types::TypeKind;
-use crate::types::{LlvmType, Type, CreateType};
+use crate::types::{Type, CreateType, TypeKind};
 use crate::value::int::IntValue;
 use crate::value::Value;
-use crate::llvm::target::TargetData;
 use crate::value::constant::Const;
 
 /// Represents an integer type.
 #[derive(Debug, Copy, Clone)]
-pub struct IntType(LlvmType);
+pub struct IntType<'a>(InkwellIntType<'a>);
 
-impl IntType {
+impl<'a> IntType<'a> {
     pub fn const_int(&self, int: u64, sign_extend: bool) -> Const<IntValue> {
         unsafe {
             Const::new_unchecked(
@@ -28,16 +28,18 @@ impl IntType {
     }
 }
 
-impl Type for IntType {
-    unsafe fn from_llvm_type_unchecked(llvm_type: LlvmType) -> Self {
-        Self(llvm_type)
+impl<'a> Type<'a> for IntType<'a> {
+    type InkwellType = InkwellIntType<'a>;
+
+    unsafe fn from_inkwell_type_unchecked(inkwell_type: AnyTypeEnum) -> Self {
+        Self(inkwell_type.into_int_type())
     }
 
     fn valid_kinds() -> Vec<TypeKind> where Self: Sized {
         vec![TypeKind::Int]
     }
 
-    fn get_llvm_type(&self) -> LlvmType {
+    fn get_inkwell_type(&self) -> Self::InkwellType {
         self.0
     }
 
@@ -53,16 +55,16 @@ pub enum IntData<'a> {
     Ptr(&'a TargetData),
 }
 
-impl CreateType for IntData<'_> {
-    type Type = IntType;
+impl<'a> CreateType for IntData<'a> {
+    type Type = IntType<'a>;
 
     #[inline(always)]
-    fn create(self, dorian: &Dorian) -> IntType {
+    fn create(self, dorian: &Dorian) -> IntType<'a> {
         let bits = match self {
             IntData::Bits(bits) => bits,
             IntData::Ptr(target_data) => target_data.get_ptr_size(),
         };
 
-        unsafe { IntType::from_llvm_type_unchecked(dorian.get_context().get_integer_type(bits)) }
+        unsafe { IntType::from_inkwell_type_unchecked(dorian.get_context().get_integer_type(bits)) }
     }
 }
