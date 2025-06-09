@@ -1,0 +1,8 @@
+[package]
+name = "dorian-llvm"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+dorian-ast = { path = "../dorian-ast" }
+inkwell.workspace = true

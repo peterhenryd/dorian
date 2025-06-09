@@ -1,31 +1,11 @@
 # dorian
 
-Dorian is a Rusty type-safe high-level abstraction for LLVM.
+Dorian is a declarative abstraction for building LLVM programs. 
 
-## Installing
+The primary appeal of Dorian is that it offers you a set of high-level structures to build programs, while also 
+separating the primary structure of the program from its representation in LLVM. Dorian does not to be a complete 
+replacement for LLVM, nor does it aim to minimize the performance disparity (between its use and the corresponding use 
+of LLVM directly) at the cost of simplicity.
 
-Add Dorian to your cargo project: `cargo add dorian`
-
-Dorian uses `llvm-sys` as its sole dependency for LLVM, so we recommend your look at
-[their page](https://crates.io/crates/llvm-sys/110.0.1) for instructions on how to install LLVM
-and to make sure that Rust can find it.
-
-Check out [EXAMPLES.md](EXAMPLES.md) for a list of simple applications built using Dorian.
-
-## Stability
-
-Dorian currently offers no guarantee of non-breaking API changes across updates, as changes are
-constantly being made to improve the utility of the API. Furthermore, the library remains
-largely untested, so while most of the code *likely* works, we can't guarantee it.
-
-Examples are available, and the API is built to be intuitive, so you likely won't run into big
-issues using Dorian for a hobby project, it is not recommended for a production context.
-
-## Transition from LLVM
-
-Check out [LLVM_COMPARISON.md](LLVM_COMPARISON.md) for a complete analogous comparison of the
-LLVM and Dorian API.
-
-## Contributing
-
-Check out [CONTRIBUTING.md](CONTRIBUTING.md)
+Since Dorian uses [Inkwell](https://github.com/TheDan64/inkwell) (a Rust wrapper for LLVM), features that are not
+abstracted by Dorian are still available through Inkwell upon compilation.

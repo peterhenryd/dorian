@@ -1,0 +1,8 @@
+[package]
+name = "dorian-cranelift"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+cranelift.workspace = true
+dorian-ast = { path = "../dorian-ast" }

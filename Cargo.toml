@@ -1,10 +1,25 @@
 [package]
 name = "dorian"
-version = "0.2.2"
-edition = "2018"
-description = "The intuitive LLVM abstraction written in Rust."
-license-file = "LICENSE"
-homepage = "https://github.com/peterhenryd/dorian"
+version = "0.1.0"
+edition = "2024"
+
+[workspace]
+members = ["dorian-ast", "dorian-cranelift", "dorian-llvm"]
+
+[workspace.dependencies]
+inkwell = { version = "0.6.0", features = ["llvm18-1"] }
+cranelift = { version = "0.120.0", features = ["frontend", "module"] }
+
+[features]
+default = []
+cranelift = ["dep:dorian-cranelift"]
+llvm = ["dep:dorian-llvm"]
 
 [dependencies]
-llvm-sys = "140.0.2"
+dorian-ast = { path = "dorian-ast" }
+dorian-cranelift = { path = "dorian-cranelift", optional = true }
+dorian-llvm = { path = "dorian-llvm", optional = true }
+
+[dev-dependencies]
+dorian = { path = ".", features = ["cranelift", "llvm"] }
+inkwell.workspace = true
