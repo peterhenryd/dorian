@@ -1,47 +1,42 @@
-use crate::Llvm;
+use inkwell::types::BasicType;
+use crate::{llvm, Llvm};
 use dorian_ast::function::FunctionType;
 use dorian_ast::ty::{
     BoolType, ConcreteType, DataType, FloatType, IntType, IntWidth, NumType, PtrType, ScalarType
     , VectorType, VoidType,
 };
-use inkwell::types::{
-    BasicMetadataTypeEnum, BasicType, BasicTypeEnum,
-    FloatType as LlvmFloatType, FunctionType as LlvmFunctionType, IntType as LlvmIntType,
-    PointerType as LlvmPointerType, VectorType as LlvmVectorType, VoidType as LlvmVoidType,
-};
-use inkwell::AddressSpace;
 
 impl Llvm {
-    fn compile_concrete_type(&self, ty: &ConcreteType) -> LlvmConcreteType {
+    fn compile_concrete_type(&self, ty: &ConcreteType) -> llvm::ConcreteType {
         match ty {
-            ConcreteType::Data(x) => LlvmConcreteType::Data(self.compile_data_type(x)),
-            ConcreteType::Void(x) => LlvmConcreteType::Void(self.compile_void_type(x)),
+            ConcreteType::Data(x) => llvm::ConcreteType::Data(self.compile_data_type(x)),
+            ConcreteType::Void(x) => llvm::ConcreteType::Void(self.compile_void_type(x)),
         }
     }
 
-    pub(crate) fn compile_data_type(&self, ty: &DataType) -> BasicTypeEnum {
+    pub(crate) fn compile_data_type(&self, ty: &DataType) -> llvm::Type {
         match ty {
             DataType::Scalar(x) => self.compile_scalar_type(x).as_basic_type_enum(),
             DataType::Vector(x) => self.compile_vector_type(x).as_basic_type_enum(),
         }
     }
 
-    fn compile_scalar_type(&self, ty: &ScalarType) -> LlvmScalarType {
+    fn compile_scalar_type(&self, ty: &ScalarType) -> llvm::ScalarType {
         match ty {
             ScalarType::Num(x) => self.compile_num_type(x),
-            ScalarType::Bool(x) => LlvmScalarType::Int(self.compile_bool_type(x)),
-            ScalarType::Ptr(x) => LlvmScalarType::Pointer(self.compile_ptr_type(x)),
+            ScalarType::Bool(x) => llvm::ScalarType::Int(self.compile_bool_type(x)),
+            ScalarType::Ptr(x) => llvm::ScalarType::Pointer(self.compile_ptr_type(x)),
         }
     }
 
-    fn compile_num_type(&self, ty: &NumType) -> LlvmScalarType {
+    fn compile_num_type(&self, ty: &NumType) -> llvm::ScalarType {
         match ty {
-            NumType::Int(x) => LlvmScalarType::Int(self.compile_int_type(x)),
-            NumType::Float(x) => LlvmScalarType::Float(self.compile_float_type(x)),
+            NumType::Int(x) => llvm::ScalarType::Int(self.compile_int_type(x)),
+            NumType::Float(x) => llvm::ScalarType::Float(self.compile_float_type(x)),
         }
     }
 
-    fn compile_int_type(&self, ty: &IntType) -> LlvmIntType {
+    fn compile_int_type(&self, ty: &IntType) -> llvm::IntType {
         match ty.width {
             IntWidth::I(bits) => self.context.custom_width_int_type(bits),
             IntWidth::I8 => self.context.i8_type(),
@@ -52,7 +47,7 @@ impl Llvm {
         }
     }
 
-    fn compile_float_type(&self, ty: &FloatType) -> LlvmFloatType {
+    fn compile_float_type(&self, ty: &FloatType) -> llvm::FloatType {
         match ty {
             FloatType::F16 => self.context.f16_type(),
             FloatType::F32 => self.context.f32_type(),
@@ -61,23 +56,23 @@ impl Llvm {
         }
     }
 
-    fn compile_bool_type(&self, _: &BoolType) -> LlvmIntType {
+    fn compile_bool_type(&self, _: &BoolType) -> llvm::IntType {
         self.context.bool_type()
     }
 
-    fn compile_ptr_type(&self, _: &PtrType) -> LlvmPointerType {
-        self.context.ptr_type(AddressSpace::default())
+    fn compile_ptr_type(&self, _: &PtrType) -> llvm::PointerType {
+        self.context.ptr_type(llvm::AddressSpace::default())
     }
 
-    fn compile_void_type(&self, _: &VoidType) -> LlvmVoidType {
+    fn compile_void_type(&self, _: &VoidType) -> llvm::VoidType {
         self.context.void_type()
     }
 
-    fn compile_vector_type(&self, ty: &VectorType) -> LlvmVectorType {
+    fn compile_vector_type(&self, ty: &VectorType) -> llvm::VectorType {
         self.compile_scalar_type(&ty.elem).vec_type(ty.len)
     }
 
-    pub(crate) fn compile_function_type(&self, ty: &FunctionType) -> LlvmFunctionType {
+    pub(crate) fn compile_function_type(&self, ty: &FunctionType) -> llvm::FunctionType {
         let return_type = self.compile_concrete_type(&ty.return_type);
         let param_types = ty
             .params
@@ -86,47 +81,5 @@ impl Llvm {
             .collect::<Vec<_>>();
 
         return_type.fn_type(&param_types, false)
-    }
-}
-
-enum LlvmConcreteType<'ctx> {
-    Data(BasicTypeEnum<'ctx>),
-    Void(LlvmVoidType<'ctx>),
-}
-
-impl<'ctx> LlvmConcreteType<'ctx> {
-    fn fn_type(
-        &self,
-        param_types: &[BasicMetadataTypeEnum<'ctx>],
-        is_var_arg: bool,
-    ) -> LlvmFunctionType<'ctx> {
-        match self {
-            LlvmConcreteType::Data(x) => x.fn_type(param_types, is_var_arg),
-            LlvmConcreteType::Void(x) => x.fn_type(param_types, is_var_arg),
-        }
-    }
-}
-
-enum LlvmScalarType<'ctx> {
-    Int(LlvmIntType<'ctx>),
-    Float(LlvmFloatType<'ctx>),
-    Pointer(LlvmPointerType<'ctx>),
-}
-
-impl<'ctx> LlvmScalarType<'ctx> {
-    fn vec_type(&self, size: u32) -> LlvmVectorType<'ctx> {
-        match self {
-            LlvmScalarType::Int(x) => x.vec_type(size),
-            LlvmScalarType::Float(x) => x.vec_type(size),
-            LlvmScalarType::Pointer(x) => x.vec_type(size),
-        }
-    }
-
-    fn as_basic_type_enum(&self) -> BasicTypeEnum<'ctx> {
-        match self {
-            LlvmScalarType::Int(x) => x.as_basic_type_enum(),
-            LlvmScalarType::Float(x) => x.as_basic_type_enum(),
-            LlvmScalarType::Pointer(x) => x.as_basic_type_enum(),
-        }
     }
 }

@@ -1,13 +1,11 @@
 use crate::block::builder::BlockBuilder;
-use crate::stmt::Stmt;
+use stmt::Stmt;
 
 pub mod builder;
+pub mod stmt;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Block<'s> {
-    /// **Note**: While you can do safely, modifying this field directly is not recommended as it requires you to keep
-    /// track of contextual information about the block's scope and invocation context. Invalid modifications will lead
-    /// to panic upon compilation. It is recommended you use [Block::build] to construct blocks.
     pub stmts: Vec<Stmt<'s>>,
 }
 

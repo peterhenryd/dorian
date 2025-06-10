@@ -3,6 +3,9 @@ use crate::block::Block;
 use crate::val::{Value, Var};
 
 /*
+List of LLVM builder methods that are either implemented ([x]), partially implemented ([/]), or not implemented ([ ]),
+or not planned to be implemented (NP).
+
 [x] build_return
 NP  build_aggregate_return
 [x] build_call
@@ -23,9 +26,9 @@ NP  build_direct_call
 [ ] build_struct_gep
 [ ] build_ptr_diff
 [ ] build_phi
-[ ] build_store
-[ ] build_load
-[ ] build_alloca
+[/] build_store
+[/] build_load
+[/] build_alloca
 [ ] build_array_alloca
 [ ] build_memcpy
 [ ] build_memmove
@@ -33,11 +36,11 @@ NP  build_direct_call
 [ ] build_malloc
 [ ] build_array_malloc
 [ ] build_free
-[ ] built_int_unsigned_div
-[ ] build_int_signed_div
+[x] built_int_unsigned_div
+[x] build_int_signed_div
 [ ] built_int_exact_signed_div
-[ ] build_int_unsigned_rem
-[ ] build_int_signed_rem
+[x] build_int_unsigned_rem
+[x] build_int_signed_rem
 [ ] build_int_s_extend
 [ ] build_address_space_cast
 [ ] build_bit_cast
@@ -46,7 +49,7 @@ NP  build_direct_call
 [ ] build_int_z_extend_or_bit_cast
 [ ] build_int_truncate
 [ ] build_int_truncate_or_bit_cast
-[ ] build_float_rem
+[x] build_float_rem
 [ ] build_float_to_unsigned_int
 [ ] build_float_to_signed_int
 [ ] build_unsigned_int_to_float
@@ -56,36 +59,36 @@ NP  build_direct_call
 [ ] build_float_cast
 [ ] build_int_cast
 [ ] built_int_cast_sign_flag
-[ ] build_float_div
-[ ] build_int_nsw_add
-[ ] build_int_nuw_add
-[ ] built_float_add
-[ ] build_xor
-[ ] build_add
-[ ] build_or
-[ ] build_left_shift
-[ ] build_right_shift
-[ ] build_int_sub
-[ ] build_int_nsw_sub
-[ ] build_int_nuw_sub
-[ ] build_float_sub
-[ ] build_int_mul
-[ ] build_int_nsw_mul
-[ ] build_int_nuw_mul
-[ ] build_float_mul
+[x] build_float_div
+[x] build_int_nsw_add
+[x] build_int_nuw_add
+[x] built_float_add
+[x] build_xor
+[x] build_add
+[x] build_or
+[x] build_left_shift
+[x] build_right_shift
+[x] build_int_sub
+[x] build_int_nsw_sub
+[x] build_int_nuw_sub
+[x] build_float_sub
+[x] build_int_mul
+[x] build_int_nsw_mul
+[x] build_int_nuw_mul
+[x] build_float_mul
 [ ] build_binop
 [ ] build_cast
 [ ] build_pointer_cast
-[ ] build_int_compare
-[ ] build_float_compare
-[ ] build_unconditional_branch
-[ ] build_conditional_branch
+[x] build_int_compare
+[x] build_float_compare
+[/] build_unconditional_branch
+[/] build_conditional_branch
 [ ] build_indirect_branch
-[ ] build_int_neg
-[ ] build_int_nsw_neg
-[ ] build_int_nuw_neg
-[ ] build_float_neg
-[ ] build_not
+[x] build_int_neg
+[x] build_int_nsw_neg
+[x] build_int_nuw_neg
+[x] build_float_neg
+[x] build_not
 [ ] build_extract_value
 [ ] build_insert_value
 [ ] build_extract_element

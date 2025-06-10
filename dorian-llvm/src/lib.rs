@@ -1,22 +1,20 @@
 use dorian_ast::backend::Backend;
 use dorian_ast::module::Module;
-use inkwell::attributes::{Attribute, AttributeLoc};
-use inkwell::context::Context as LlvmContext;
-use inkwell::module::Module as LlvmModule;
 
 mod scope;
 mod ty;
 mod val;
+mod llvm;
 
-pub struct Llvm {
-    context: LlvmContext,
-    signed_attribute: Attribute,
-    unsigned_attribute: Attribute,
+pub(crate) struct Llvm {
+    context: llvm::Context,
+    signed_attribute: llvm::Attribute,
+    unsigned_attribute: llvm::Attribute,
 }
 
 impl Llvm {
-    pub fn new() -> Self {
-        let context = LlvmContext::create();
+    pub(crate) fn new() -> Self {
+        let context = llvm::Context::create();
         let signed_attribute = context.create_string_attribute("signage", "signed");
         let unsigned_attribute = context.create_string_attribute("signage", "unsigned");
 
@@ -27,13 +25,13 @@ impl Llvm {
         }
     }
 
-    pub fn context(&self) -> &LlvmContext {
+    pub(crate) fn context(&self) -> &llvm::Context {
         &self.context
     }
 }
 
 impl Backend for Llvm {
-    type CompiledModule<'a> = LlvmModule<'a>;
+    type CompiledModule<'a> = llvm::Module<'a>;
 
     fn compile_module<'a>(&'a self, module: &Module) -> Self::CompiledModule<'a> {
         let llvm_module = self.context.create_module(&module.name);
@@ -62,9 +60,9 @@ impl Backend for Llvm {
 
             if let Some(signed) = function.ty.return_type.get_signage() {
                 if signed {
-                    llvm_function.add_attribute(AttributeLoc::Return, self.signed_attribute);
+                    llvm_function.add_attribute(llvm::AttributeLoc::Return, self.signed_attribute);
                 } else {
-                    llvm_function.add_attribute(AttributeLoc::Return, self.unsigned_attribute);
+                    llvm_function.add_attribute(llvm::AttributeLoc::Return, self.unsigned_attribute);
                 }
             }
 
@@ -79,7 +77,7 @@ impl Backend for Llvm {
                     self.unsigned_attribute
                 };
 
-                llvm_function.add_attribute(AttributeLoc::Param(i as u32), attribute);
+                llvm_function.add_attribute(llvm::AttributeLoc::Param(i as u32), attribute);
             }
 
             self.create_scope(&llvm_module, llvm_function)

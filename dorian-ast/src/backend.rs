@@ -1,9 +1,9 @@
 use crate::module::Module;
 
 pub trait Backend {
-    type CompiledModule<'a>
+    type CompiledModule<'ctx>
     where
-        Self: 'a;
+        Self: 'ctx;
 
-    fn compile_module<'a>(&'a self, module: &Module) -> Self::CompiledModule<'a>;
+    fn compile_module<'ctx>(&'ctx self, module: &Module) -> Self::CompiledModule<'ctx>;
 }
