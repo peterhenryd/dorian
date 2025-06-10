@@ -5,5 +5,5 @@ pub trait Backend {
     where
         Self: 'ctx;
 
-    fn compile_module<'ctx>(&'ctx self, module: &Module) -> Self::CompiledModule<'ctx>;
+    fn compile_module<'ctx>(&'ctx self, ast_module: &Module) -> Self::CompiledModule<'ctx>;
 }

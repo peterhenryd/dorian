@@ -1,32 +1,26 @@
 use inkwell::values::BasicValue;
+use ast::val::{Arg, Bin, BinOp, Call, ContextValue, Expr, Float, Int, Lit, Num, SignedInt, Una, UnaOp, UnsignedInt, Value};
 use crate::{llvm, Llvm};
-use crate::scope::Scope;
-use dorian_ast::val::{
-    Arg, Bin, BinOp, Call, ContextValue, Expr, Float, Int, Lit, Num, SignedInt, Una, UnaOp,
-    UnsignedInt, Value,
-};
+use crate::scope::{LocalScope, Scope};
 
 impl Llvm {
     pub(crate) fn compile_value<'ctx>(
         &'ctx self,
         value: &Value,
-        scope: &mut Scope<'ctx, '_>,
-    ) -> llvm::Value<'ctx> {
-        let value = match &value {
-            Value::Context(x) => self.compile_context_value(x, scope),
-            // TODO: remove hardcoded type
+        scope: Scope<'ctx, '_, '_>,
+    ) -> Option<llvm::Value<'ctx>> {
+        match &value {
+            Value::Context(x) => Some(self.compile_context_value(x, scope.to_local()?)),
             Value::Expr(x) => self.compile_expr(x, scope),
-            Value::Lit(x) => self.compile_lit(x, scope),
+            Value::Lit(x) => Some(self.compile_lit(x)),
             Value::Call(x) => self.compile_call(x, scope),
-        };
-
-        value
+        }
     }
 
     fn compile_context_value<'ctx>(
         &'ctx self,
         value: &ContextValue,
-        scope: &Scope<'ctx, '_>,
+        scope: &LocalScope<'ctx, '_>,
     ) -> llvm::Value<'ctx> {
         match value {
             ContextValue::Arg(arg) => self.compile_arg_value(arg, scope),
@@ -39,7 +33,7 @@ impl Llvm {
     fn compile_arg_value<'ctx>(
         &'ctx self,
         arg: &Arg,
-        scope: &Scope<'ctx, '_>,
+        scope: &LocalScope<'ctx, '_>,
     ) -> llvm::Value<'ctx> {
         let value = scope
             .function
@@ -57,33 +51,33 @@ impl Llvm {
     fn compile_expr<'ctx>(
         &'ctx self,
         value: &Expr,
-        scope: &mut Scope<'ctx, '_>,
-    ) -> llvm::Value<'ctx> {
+        scope: Scope<'ctx, '_, '_>
+    ) -> Option<llvm::Value<'ctx>> {
         match value {
             Expr::Bin(x) => self.compile_bin(x, scope),
             Expr::Una(x) => self.compile_una(x, scope),
         }
     }
 
-    fn compile_bin<'ctx>(&'ctx self, value: &Bin, scope: &mut Scope<'ctx, '_>) -> llvm::Value<'ctx> {
-        let lhs = self.compile_value(&value.lhs, scope);
-        let rhs = self.compile_value(&value.rhs, scope);
+    fn compile_bin<'ctx>(&'ctx self, value: &Bin, scope: Scope<'ctx, '_, '_>) -> Option<llvm::Value<'ctx>> {
+        let lhs = self.compile_value(&value.lhs, scope)?;
+        let rhs = self.compile_value(&value.rhs, scope)?;
 
         let value = if lhs.raw.is_int_value() {
             let signed = lhs.signage.unwrap_or(false);
             let lhs = lhs.raw.into_int_value();
 
-            self.compile_int_bin(value.op, value.no_wrap, signed, lhs, rhs.raw, scope)
+            self.compile_int_bin(value.op, value.no_wrap, signed, lhs, rhs.raw, scope.to_local()?)
                 .as_basic_value_enum()
         } else if lhs.raw.is_float_value() {
             let lhs = lhs.raw.into_float_value();
 
-            self.compile_float_bin(value.op, lhs, rhs.raw, scope)
+            self.compile_float_bin(value.op, lhs, rhs.raw, scope.to_local()?)
         } else {
             panic!("Value does not support binary operations: {:?}", lhs.raw);
         };
 
-        llvm::Value::new(value, lhs.signage)
+        Some(llvm::Value::new(value, lhs.signage))
     }
 
     fn compile_int_bin<'ctx>(
@@ -93,7 +87,7 @@ impl Llvm {
         signed: bool,
         lhs: llvm::Int<'ctx>,
         rhs: llvm::RawValue<'ctx>,
-        scope: &Scope<'ctx, '_>,
+        scope: &LocalScope<'ctx, '_>,
     ) -> llvm::Int<'ctx> {
         if !rhs.is_int_value() {
             panic!(
@@ -181,7 +175,7 @@ impl Llvm {
         op: BinOp,
         lhs: llvm::Float<'ctx>,
         rhs: llvm::RawValue<'ctx>,
-        scope: &Scope<'ctx, '_>,
+        scope: &LocalScope<'ctx, '_>,
     ) -> llvm::RawValue<'ctx> {
         if !rhs.is_float_value() {
             panic!(
@@ -250,8 +244,8 @@ impl Llvm {
         }
     }
 
-    fn compile_una<'ctx>(&'ctx self, value: &Una, scope: &mut Scope<'ctx, '_>) -> llvm::Value<'ctx> {
-        let operand = self.compile_value(&value.operand, scope);
+    fn compile_una<'ctx>(&'ctx self, value: &Una, scope: Scope<'ctx, '_, '_>) -> Option<llvm::Value<'ctx>> {
+        let operand = self.compile_value(&value.operand, scope)?;
         let signed = operand.signage.unwrap_or(false);
 
         let value = if operand.raw.is_int_value() {
@@ -259,12 +253,12 @@ impl Llvm {
             self.compile_int_una(value.op, value.no_wrap, signed, operand, scope).as_basic_value_enum()
         } else if operand.raw.is_float_value() {
             let operand = operand.raw.into_float_value();
-            self.compile_float_una(value.op, operand, scope).as_basic_value_enum()
+            self.compile_float_una(value.op, operand, scope.to_local()?).as_basic_value_enum()
         } else {
             panic!("Value does not support unary operations: {:?}", operand.raw);
         };
 
-        llvm::Value::new(value, operand.signage)
+        Some(llvm::Value::new(value, operand.signage))
     }
 
     fn compile_int_una<'ctx>(
@@ -273,17 +267,21 @@ impl Llvm {
         no_wrap: bool,
         signed: bool,
         operand: llvm::Int<'ctx>,
-        scope: &Scope<'ctx, '_>,
+        scope: Scope<'ctx, '_, '_>
     ) -> llvm::Int<'ctx> {
-        match op {
-            UnaOp::Neg if no_wrap && signed => {
-                scope.builder.build_int_nsw_neg(operand, "").unwrap()
+        match scope {
+            Scope::Global { .. } => match op {
+                UnaOp::Neg if no_wrap && signed => operand.const_nsw_neg(),
+                UnaOp::Neg if no_wrap && !signed => operand.const_nuw_neg(),
+                UnaOp::Neg => operand.const_neg(),
+                UnaOp::Not => operand.const_not(),
             }
-            UnaOp::Neg if no_wrap && !signed => {
-                scope.builder.build_int_nuw_neg(operand, "").unwrap()
-            }
-            UnaOp::Neg => scope.builder.build_int_neg(operand, "").unwrap(),
-            UnaOp::Not => scope.builder.build_not(operand, "").unwrap(),
+            Scope::Local(LocalScope { builder: b, .. }) => match op {
+                UnaOp::Neg if no_wrap && signed => b.build_int_nsw_neg(operand, ""),
+                UnaOp::Neg if no_wrap && !signed => b.build_int_nuw_neg(operand, ""),
+                UnaOp::Neg => b.build_int_neg(operand, ""),
+                UnaOp::Not => b.build_not(operand, ""),
+            }.unwrap(),
         }
     }
 
@@ -291,7 +289,7 @@ impl Llvm {
         &'ctx self,
         op: UnaOp,
         operand: llvm::Float<'ctx>,
-        scope: &Scope<'ctx, '_>,
+        scope: &LocalScope<'ctx, '_>,
     ) -> llvm::Float<'ctx> {
         match op {
             UnaOp::Neg => scope.builder.build_float_neg(operand, "").unwrap(),
@@ -299,14 +297,11 @@ impl Llvm {
         }
     }
 
-    fn compile_lit<'ctx>(&'ctx self, value: &Lit, scope: &Scope<'ctx, '_>) -> llvm::Value<'ctx> {
+    fn compile_lit(&self, value: &Lit) -> llvm::Value {
         match value {
-            Lit::Num(x) => self.compile_num(x, scope),
+            Lit::Num(x) => self.compile_num(x),
             Lit::Bool(x) => {
-                let raw_value = scope
-                    .llvm
-                    .context
-                    .bool_type()
+                let raw_value = self.context.bool_type()
                     .const_int(*x as u64, false)
                     .as_basic_value_enum();
                 llvm::Value::new(raw_value, None)
@@ -314,49 +309,32 @@ impl Llvm {
         }
     }
 
-    fn compile_num<'ctx>(&'ctx self, value: &Num, scope: &Scope<'ctx, '_>) -> llvm::Value<'ctx> {
+    fn compile_num(&self, value: &Num) -> llvm::Value {
         match value {
             Num::Int(x) => match x {
                 &Int::Signed(x) => {
                     let (raw_value, neg) = match x {
                         SignedInt::B8(i) => (
-                            scope.llvm.context.i8_type().const_int(i.abs() as u64, true),
+                            self.context.i8_type().const_int(i.abs() as u64, true),
                             i < 0,
                         ),
                         SignedInt::B16(i) => (
-                            scope
-                                .llvm
-                                .context
-                                .i16_type()
-                                .const_int(i.abs() as u64, true),
+                            self.context.i16_type().const_int(i.abs() as u64, true),
                             i < 0,
                         ),
                         SignedInt::B32(i) => (
-                            scope
-                                .llvm
-                                .context
-                                .i32_type()
-                                .const_int(i.abs() as u64, true),
+                            self.context.i32_type().const_int(i.abs() as u64, true),
                             i < 0,
                         ),
                         SignedInt::B64(i) => (
-                            scope
-                                .llvm
-                                .context
-                                .i64_type()
-                                .const_int(i.abs() as u64, true),
+                            self.context.i64_type().const_int(i.abs() as u64, true),
                             i < 0,
                         ),
                         SignedInt::B128(i) => (
-                            scope
-                                .llvm
-                                .context
-                                .i128_type()
-                                .const_int_from_string(
-                                    &i.abs().to_string(),
-                                    llvm::StringRadix::Decimal,
-                                )
-                                .unwrap(),
+                            self.context.i128_type().const_int_from_string(
+                                &i.abs().to_string(),
+                                llvm::StringRadix::Decimal,
+                            ).unwrap(),
                             i < 0,
                         ),
                     };
@@ -371,20 +349,11 @@ impl Llvm {
                 },
                 &Int::Unsigned(x) => {
                     let raw_value = match x {
-                        UnsignedInt::U8(i) => {
-                            scope.llvm.context.i8_type().const_int(i as u64, false)
-                        }
-                        UnsignedInt::U16(i) => {
-                            scope.llvm.context.i16_type().const_int(i as u64, false)
-                        }
-                        UnsignedInt::U32(i) => {
-                            scope.llvm.context.i32_type().const_int(i as u64, false)
-                        }
-                        UnsignedInt::U64(i) => scope.llvm.context.i64_type().const_int(i, false),
-                        UnsignedInt::U128(i) => scope
-                            .llvm
-                            .context
-                            .i128_type()
+                        UnsignedInt::U8(i) => self.context.i8_type().const_int(i as u64, false),
+                        UnsignedInt::U16(i) => self.context.i16_type().const_int(i as u64, false),
+                        UnsignedInt::U32(i) => self.context.i32_type().const_int(i as u64, false),
+                        UnsignedInt::U64(i) => self.context.i64_type().const_int(i, false),
+                        UnsignedInt::U128(i) => self.context.i128_type()
                             .const_int_from_string(&i.to_string(), llvm::StringRadix::Decimal)
                             .unwrap(),
                     }.as_basic_value_enum();
@@ -394,16 +363,10 @@ impl Llvm {
             },
             Num::Float(x) => {
                 let raw_value = match x {
-                    Float::F32(x) => scope
-                        .llvm
-                        .context
-                        .f32_type()
+                    Float::F32(x) => self.context.f32_type()
                         .const_float(*x as f64)
                         .as_basic_value_enum(),
-                    Float::F64(x) => scope
-                        .llvm
-                        .context
-                        .f64_type()
+                    Float::F64(x) => self.context.f64_type()
                         .const_float(*x)
                         .as_basic_value_enum(),
                 };
@@ -415,10 +378,9 @@ impl Llvm {
     fn compile_call<'ctx>(
         &'ctx self,
         value: &Call,
-        scope: &mut Scope<'ctx, '_>,
-    ) -> llvm::Value<'ctx> {
-        let function_value = scope
-            .module
+        scope: Scope<'ctx, '_, '_>,
+    ) -> Option<llvm::Value<'ctx>> {
+        let function_value = scope.to_local()?.module
             .get_function(&value.function_name)
             .expect("Failed to get function");
         let signage = function_value
@@ -429,20 +391,17 @@ impl Llvm {
             panic!("Function {} has no return type", value.function_name);
         }
 
-        let args = value
-            .args
-            .iter()
-            .map(|arg| self.compile_value(arg, scope).raw.into())
-            .collect::<Vec<_>>();
-        let value = scope
-            .builder
+        let mut args = Vec::with_capacity(value.args.len());
+        for arg in &value.args {
+            let compiled_arg = self.compile_value(arg, scope)?;
+            args.push(compiled_arg.raw.into());
+        }
+        let value = scope.to_local()?.builder
             .build_call(function_value, &args, "")
             .unwrap()
             .try_as_basic_value()
             .unwrap_left();
         
-        dbg!(signage);
-
-        llvm::Value::new(value, signage)
+        Some(llvm::Value::new(value, signage))
     }
 }

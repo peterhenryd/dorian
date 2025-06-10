@@ -1,10 +1,7 @@
 use inkwell::types::BasicType;
+use ast::function::FunctionType;
+use ast::ty::{BoolType, ConcreteType, DataType, FloatType, IntType, IntWidth, NumType, PtrType, ScalarType, VectorType, VoidType};
 use crate::{llvm, Llvm};
-use dorian_ast::function::FunctionType;
-use dorian_ast::ty::{
-    BoolType, ConcreteType, DataType, FloatType, IntType, IntWidth, NumType, PtrType, ScalarType
-    , VectorType, VoidType,
-};
 
 impl Llvm {
     fn compile_concrete_type(&self, ty: &ConcreteType) -> llvm::ConcreteType {

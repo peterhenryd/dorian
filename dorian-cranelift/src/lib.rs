@@ -1,5 +1,7 @@
-use dorian_ast::backend::Backend;
-use dorian_ast::module::Module;
+extern crate dorian_ast as ast;
+
+use ast::backend::Backend;
+use ast::module::Module;
 
 pub struct Cranelift {}
 

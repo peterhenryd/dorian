@@ -1,21 +1,21 @@
 use std::collections::HashMap;
 use inkwell::values::BasicValue;
+use ast::block::Block;
+use ast::block::stmt::{AssignStmt, BindStmt, IfElse, IfStmt, ReturnStmt, Stmt, WhileStmt};
+use ast::function::Function;
+use ast::val::Var;
 use crate::{llvm, Llvm};
-use dorian_ast::block::Block;
-use dorian_ast::function::Function;
-use dorian_ast::block::stmt::{AssignStmt, BindStmt, IfElse, IfStmt, ReturnStmt, Stmt, WhileStmt};
-use dorian_ast::val::Var;
 
 impl Llvm {
-    pub(crate) fn create_scope<'ctx, 'a>(
+    pub(crate) fn create_scope<'ctx, 'm>(
         &'ctx self,
-        llvm_module: &'a llvm::Module<'ctx>,
-        llvm_function: llvm::Function<'ctx>,
-    ) -> Scope<'ctx, 'a> {
-        Scope {
+        module: &'m llvm::Module<'ctx>,
+        function: llvm::Function<'ctx>,
+    ) -> LocalScope<'ctx, 'm> {
+        LocalScope {
             llvm: self,
-            module: llvm_module,
-            function: llvm_function,
+            module,
+            function,
             builder: self.context.create_builder(),
             levels: vec![Level::new()],
             depth: 0,
@@ -23,16 +23,31 @@ impl Llvm {
     }
 }
 
-pub(crate) struct Scope<'ctx, 'a> {
+#[derive(Copy, Clone)]
+pub(crate) enum Scope<'ctx, 'l, 'm> {
+    Global,
+    Local(&'l LocalScope<'ctx, 'm>),
+}
+
+impl<'ctx, 'l, 'm> Scope<'ctx, 'l, 'm> {
+    pub(crate) fn to_local(self) -> Option<&'l LocalScope<'ctx, 'm>> {
+        match self {
+            Scope::Global { .. } => None,
+            Scope::Local(scope) => Some(scope),
+        }
+    }
+}
+
+pub(crate) struct LocalScope<'ctx, 'm> {
     pub(crate) llvm: &'ctx Llvm,
-    pub(crate) module: &'a llvm::Module<'ctx>,
+    pub(crate) module: &'m llvm::Module<'ctx>,
     pub(crate) function: llvm::Function<'ctx>,
     pub(crate) builder: llvm::Builder<'ctx>,
     levels: Vec<Level<'ctx>>,
     depth: usize,
 }
 
-impl<'ctx> Scope<'ctx, '_> {
+impl<'ctx> LocalScope<'ctx, '_> {
     pub(crate) fn get_var(&self, var: &Var, load: bool) -> Option<llvm::Value<'ctx>> {
         // Iterate in reverse to prefer the most recent scope and allow for shadowing
         let mut stored_value = None;
@@ -106,12 +121,12 @@ impl<'ctx> Scope<'ctx, '_> {
     }
 
     fn compile_if_stmt(&mut self, stmt: &IfStmt) -> bool {
-        let condition = self.llvm.compile_value(&stmt.condition, self);
+        let condition = self.llvm.compile_value(&stmt.condition, Scope::Local(self)).unwrap();
 
         let then_block = self.append_block();
         let else_block = self.append_block();
         let merge_block = self.append_block();
-        
+
         self.builder.build_conditional_branch(condition.raw.into_int_value(), then_block, else_block).unwrap();
         self.builder.position_at_end(then_block);
 
@@ -131,9 +146,7 @@ impl<'ctx> Scope<'ctx, '_> {
             self.builder.build_unconditional_branch(merge_block).unwrap();
         }
 
-        if then_terminates && else_terminates {
-            self.builder.build_unconditional_branch(merge_block).unwrap();
-        } else {
+        if !then_terminates || !else_terminates {
             self.builder.position_at_end(merge_block);
         }
 
@@ -152,8 +165,8 @@ impl<'ctx> Scope<'ctx, '_> {
             self.builder.build_return(None).unwrap();
             return;
         };
-        
-        let value = self.llvm.compile_value(ast_value, self);
+
+        let value = self.llvm.compile_value(ast_value, Scope::Local(self)).unwrap();
         self.builder.build_return(Some(&value.raw)).unwrap();
     }
 
@@ -162,7 +175,7 @@ impl<'ctx> Scope<'ctx, '_> {
     }
 
     fn compile_while_stmt(&mut self, stmt: &WhileStmt) {
-        let condition = self.llvm.compile_value(&stmt.condition, self);
+        let condition = self.llvm.compile_value(&stmt.condition, Scope::Local(self)).unwrap();
 
         let exit_block = self.append_block();
         let loop_block = self.append_block();
@@ -170,21 +183,21 @@ impl<'ctx> Scope<'ctx, '_> {
 
         self.builder.position_at_end(loop_block);
         self.compile_block(&stmt.loop_block);
-        
-        let condition = self.llvm.compile_value(&stmt.condition, self);
+
+        let condition = self.llvm.compile_value(&stmt.condition, Scope::Local(self)).unwrap();
         self.builder.build_conditional_branch(condition.raw.into_int_value(), loop_block, exit_block).unwrap();
 
         self.builder.position_at_end(exit_block);
     }
 
     fn compile_bind_stmt(&mut self, stmt: &BindStmt) {
-        let stored_value = self.llvm.compile_value(&stmt.value, self);
+        let stored_value = self.llvm.compile_value(&stmt.value, Scope::Local(self)).unwrap();
         let stored_type = stored_value.raw.get_type();
-        
+
         // TODO: there are more efficient ways to handle variables and avoid stack allocation by increasing context awareness
         let pointer_value = self.builder.build_alloca(stored_type, "").unwrap();
         self.builder.build_store(pointer_value, stored_value.raw).unwrap();
-        
+
         let raw_value = pointer_value.as_basic_value_enum();
         let value = llvm::Value::new(raw_value, stored_value.signage);
 
@@ -193,7 +206,7 @@ impl<'ctx> Scope<'ctx, '_> {
 
     fn compile_assign_stmt(&mut self, stmt: &AssignStmt) {
         let var = self.get_var(&stmt.var, false).unwrap();
-        let new_value = self.llvm.compile_value(&stmt.value, self);
+        let new_value = self.llvm.compile_value(&stmt.value, Scope::Local(self)).unwrap();
         self.builder.build_store(var.raw.into_pointer_value(), new_value.raw).unwrap();
     }
 }

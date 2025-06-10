@@ -1,5 +1,10 @@
-use dorian_ast::backend::Backend;
-use dorian_ast::module::Module;
+extern crate dorian_ast as ast;
+
+use ast::backend::Backend;
+use ast::global::Global;
+use ast::module::Module;
+use ast::structure::Struct;
+use crate::scope::Scope;
 
 mod scope;
 mod ty;
@@ -24,45 +29,48 @@ impl Llvm {
             unsigned_attribute,
         }
     }
-}
+    
+    fn compile_struct<'ctx>(&'ctx self, ast_struct: &Struct) {
+        let struct_type = self.context.opaque_struct_type(&ast_struct.name);
+        let fields = ast_struct
+            .fields
+            .iter()
+            .map(|field_type| self.compile_data_type(field_type))
+            .collect::<Vec<_>>();
 
-impl Backend for Llvm {
-    type CompiledModule<'a> = llvm::Module<'a>;
+        struct_type.set_body(&fields, false);
+    }
+    
+    fn compile_global<'ctx>(&'ctx self, ast_global: &Global, module: &llvm::Module<'ctx>) {
+        let global_type = self.compile_data_type(&ast_global.ty);
+        let global = module.add_global(global_type, None, &ast_global.name);
 
-    fn compile_module<'a>(&'a self, module: &Module) -> Self::CompiledModule<'a> {
-        let llvm_module = self.context.create_module(&module.name);
-
-        for structure in &module.structs {
-            let llvm_struct_type = self.context.opaque_struct_type(&structure.name);
-            let fields = structure
-                .fields
-                .iter()
-                .map(|field_type| self.compile_data_type(field_type))
-                .collect::<Vec<_>>();
-
-            llvm_struct_type.set_body(&fields, false);
+        if let Some(ast_value) = &ast_global.value {
+            if let Some(value) = self.compile_value(ast_value, Scope::Global) {
+                global.set_initializer(&value.raw);
+            } else {
+                panic!("Attempted to initialize global variable '{}' with a value that could not be compiled in the global scope", ast_global.name);
+            }
         }
 
-        for global in &module.globals {
-            let llvm_global_type = self.compile_data_type(&global.ty);
-            let llvm_global = llvm_module.add_global(llvm_global_type, None, &global.name);
+        let _ = global;
+    }
+    
+    fn compile_functions<'ctx>(&'ctx self, ast_module: &Module, module: &llvm::Module<'ctx>) {
+        let mut pairs = Vec::with_capacity(ast_module.functions.len());
+        for ast_function in &ast_module.functions {
+            let function_type = self.compile_function_type(&ast_function.ty);
+            let function = module.add_function(&ast_function.name, function_type, None);
 
-            let _ = llvm_global;
-        }
-
-        for function in &module.functions {
-            let llvm_function_type = self.compile_function_type(&function.ty);
-            let llvm_function = llvm_module.add_function(&function.name, llvm_function_type, None);
-
-            if let Some(signed) = function.ty.return_type.get_signage() {
+            if let Some(signed) = ast_function.ty.return_type.get_signage() {
                 if signed {
-                    llvm_function.add_attribute(llvm::AttributeLoc::Return, self.signed_attribute);
+                    function.add_attribute(llvm::AttributeLoc::Return, self.signed_attribute);
                 } else {
-                    llvm_function.add_attribute(llvm::AttributeLoc::Return, self.unsigned_attribute);
+                    function.add_attribute(llvm::AttributeLoc::Return, self.unsigned_attribute);
                 }
             }
 
-            for (i, param) in function.ty.params.iter().enumerate() {
+            for (i, param) in ast_function.ty.params.iter().enumerate() {
                 let Some(signed) = param.get_signage() else {
                     continue;
                 };
@@ -73,13 +81,35 @@ impl Backend for Llvm {
                     self.unsigned_attribute
                 };
 
-                llvm_function.add_attribute(llvm::AttributeLoc::Param(i as u32), attribute);
+                function.add_attribute(llvm::AttributeLoc::Param(i as u32), attribute);
             }
 
-            self.create_scope(&llvm_module, llvm_function)
-                .compile_body(function)
+            pairs.push((ast_function, function));
         }
 
-        llvm_module
+        for (ast_function, function) in pairs {
+            self.create_scope(&module, function)
+                .compile_body(ast_function);
+        }
+    }
+}
+
+impl Backend for Llvm {
+    type CompiledModule<'a> = llvm::Module<'a>;
+
+    fn compile_module<'a>(&'a self, ast_module: &Module) -> Self::CompiledModule<'a> {
+        let module = self.context.create_module(&ast_module.name);
+
+        for ast_struct in &ast_module.structs {
+            self.compile_struct(ast_struct);
+        }
+
+        for ast_global in &ast_module.globals {
+            self.compile_global(ast_global, &module);
+        }
+        
+        self.compile_functions(ast_module, &module);
+
+        module
     }
 }

@@ -1,9 +1,7 @@
 use crate::function::FunctionType;
 
 mod convert;
-mod util;
-
-pub use util::*;
+pub mod util;
 
 type Bool = bool;
 
@@ -139,14 +137,3 @@ pub struct VectorType {
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct VoidType;
-
-// Type-hint retained by values to inform the backend about the type of the value when performing operations.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub enum OperativeType {
-    SignedInt,
-    UnsignedInt,
-    Float,
-    Bool,
-    Ptr,
-    Void,
-}
