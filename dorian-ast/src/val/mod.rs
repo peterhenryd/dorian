@@ -3,7 +3,7 @@ mod util;
 
 pub use util::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Context(ContextValue),
     Expr(Box<Expr>),
@@ -11,37 +11,38 @@ pub enum Value {
     Call(Call),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum ContextValue {
     Arg(Arg),
     Var(Var),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Arg {
     pub param_index: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Var {
     pub scope_index: usize,
     pub item_index: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Bin(Bin),
     Una(Una),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Bin {
     pub lhs: Value,
-    pub op: BinOp,
     pub rhs: Value,
+    pub op: BinOp,
+    pub no_wrap: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum BinOp {
     // Arithmetic operators
     Add,
@@ -67,37 +68,38 @@ pub enum BinOp {
     Ge,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Una {
     pub operand: Value,
     pub op: UnaOp,
+    pub no_wrap: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum UnaOp {
     Neg,
     Not,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Lit {
     Num(Num),
     Bool(bool),
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Num {
     Int(Int),
     Float(Float),
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum Int {
     Signed(SignedInt),
     Unsigned(UnsignedInt),
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum SignedInt {
     B8(i8),
     B16(i16),
@@ -106,7 +108,7 @@ pub enum SignedInt {
     B128(i128),
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum UnsignedInt {
     U8(u8),
     U16(u16),
@@ -115,13 +117,13 @@ pub enum UnsignedInt {
     U128(u128),
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Float {
     F32(f32),
     F64(f64),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Call {
     pub function_name: String,
     pub args: Vec<Value>,

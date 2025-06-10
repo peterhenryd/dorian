@@ -1,5 +1,6 @@
 use dorian_ast::backend::Backend;
 use dorian_ast::module::Module;
+use inkwell::attributes::{Attribute, AttributeLoc};
 use inkwell::context::Context as LlvmContext;
 use inkwell::module::Module as LlvmModule;
 
@@ -9,12 +10,20 @@ mod val;
 
 pub struct Llvm {
     context: LlvmContext,
+    signed_attribute: Attribute,
+    unsigned_attribute: Attribute,
 }
 
 impl Llvm {
     pub fn new() -> Self {
-        Self {
-            context: LlvmContext::create(),
+        let context = LlvmContext::create();
+        let signed_attribute = context.create_string_attribute("signage", "signed");
+        let unsigned_attribute = context.create_string_attribute("signage", "unsigned");
+
+        Llvm {
+            context,
+            signed_attribute,
+            unsigned_attribute,
         }
     }
 
@@ -50,6 +59,28 @@ impl Backend for Llvm {
         for function in &module.functions {
             let llvm_function_type = self.compile_function_type(&function.ty);
             let llvm_function = llvm_module.add_function(&function.name, llvm_function_type, None);
+
+            if let Some(signed) = function.ty.return_type.get_signage() {
+                if signed {
+                    llvm_function.add_attribute(AttributeLoc::Return, self.signed_attribute);
+                } else {
+                    llvm_function.add_attribute(AttributeLoc::Return, self.unsigned_attribute);
+                }
+            }
+
+            for (i, param) in function.ty.params.iter().enumerate() {
+                let Some(signed) = param.get_signage() else {
+                    continue;
+                };
+
+                let attribute = if signed {
+                    self.signed_attribute
+                } else {
+                    self.unsigned_attribute
+                };
+
+                llvm_function.add_attribute(AttributeLoc::Param(i as u32), attribute);
+            }
 
             self.create_scope(&llvm_module, llvm_function)
                 .compile_body(function)

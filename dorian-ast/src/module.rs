@@ -2,6 +2,7 @@ use crate::function::Function;
 use crate::global::Global;
 use crate::structure::Struct;
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Module {
     pub name: String,
     pub structs: Vec<Struct>,

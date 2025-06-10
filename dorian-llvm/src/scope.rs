@@ -1,12 +1,13 @@
+use crate::val::LlvmValue;
 use crate::Llvm;
 use dorian_ast::block::Block;
 use dorian_ast::function::Function;
-use dorian_ast::stmt::{IfElse, IfStmt, Stmt};
-use dorian_ast::val::{Value, Var};
+use dorian_ast::stmt::{IfElse, IfStmt, ReturnStmt, Stmt, WhileStmt};
+use dorian_ast::val::Var;
 use inkwell::basic_block::BasicBlock;
 use inkwell::builder::Builder;
 use inkwell::module::Module;
-use inkwell::values::{BasicValueEnum, FunctionValue};
+use inkwell::values::FunctionValue;
 
 impl Llvm {
     pub(crate) fn create_scope<'ctx, 'a>(
@@ -37,7 +38,7 @@ pub struct Scope<'ctx, 'a> {
 }
 
 impl<'ctx> Scope<'ctx, '_> {
-    pub fn get_var(&self, var: &Var) -> Option<BasicValueEnum<'ctx>> {
+    pub fn get_var(&self, var: &Var) -> Option<LlvmValue<'ctx>> {
         self.levels
             .get(var.scope_index)?
             .values
@@ -45,7 +46,7 @@ impl<'ctx> Scope<'ctx, '_> {
             .copied()
     }
 
-    pub fn insert_value(&mut self, value: BasicValueEnum<'ctx>) {
+    pub fn insert_value(&mut self, value: LlvmValue<'ctx>) {
         self.levels[self.depth].values.push(value);
     }
 
@@ -82,6 +83,7 @@ impl<'ctx> Scope<'ctx, '_> {
         match stmt {
             Stmt::If(x) => self.compile_if_stmt(x),
             Stmt::Return(x) => self.compile_return_stmt(x),
+            Stmt::While(x) => self.compile_while_stmt(x),
         }
 
         matches!(stmt, Stmt::Return(_))
@@ -92,7 +94,7 @@ impl<'ctx> Scope<'ctx, '_> {
         let then_block = self.append_block();
         let else_block = self.append_block();
         self.builder
-            .build_conditional_branch(condition.into_int_value(), then_block, else_block)
+            .build_conditional_branch(condition.value.into_int_value(), then_block, else_block)
             .unwrap();
 
         self.builder.position_at_end(then_block);
@@ -122,18 +124,28 @@ impl<'ctx> Scope<'ctx, '_> {
         }
     }
 
-    fn compile_return_stmt(&mut self, value: &Value) {
-        let return_value = self.llvm.compile_value(value, self);
-        self.builder.build_return(Some(&return_value)).unwrap();
+    fn compile_return_stmt(&mut self, stmt: &ReturnStmt) {
+        let return_value = stmt
+            .value
+            .as_ref()
+            .map(|x| self.llvm.compile_value(x, self).value);
+        match return_value {
+            Some(x) => self.builder.build_return(Some(&x)).unwrap(),
+            None => self.builder.build_return(None).unwrap(),
+        };
     }
 
     fn append_block(&mut self) -> BasicBlock<'ctx> {
         self.llvm.context.append_basic_block(self.llvm_function, "")
     }
+
+    fn compile_while_stmt(&self, _: &WhileStmt) {
+        todo!("While statement compilation is not implemented yet");
+    }
 }
 
 pub struct Level<'ctx> {
-    values: Vec<BasicValueEnum<'ctx>>,
+    values: Vec<LlvmValue<'ctx>>,
 }
 
 impl<'ctx> Level<'ctx> {

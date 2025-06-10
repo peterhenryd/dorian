@@ -6,8 +6,9 @@ macro_rules! bin_op {
         pub fn $function<T: From<Bin>>(lhs: Value, rhs: Value) -> T {
                 T::from(Bin {
                     lhs,
-                    op: BinOp::$variant,
                     rhs,
+                    op: BinOp::$variant,
+                    no_wrap: false,
                 })
             }
         )+
@@ -39,6 +40,7 @@ pub fn neg<T: From<Una>>(value: Value) -> T {
     T::from(Una {
         operand: value,
         op: UnaOp::Neg,
+        no_wrap: false,
     })
 }
 
@@ -46,6 +48,7 @@ pub fn not<T: From<Una>>(value: Value) -> T {
     T::from(Una {
         operand: value,
         op: UnaOp::Not,
+        no_wrap: false,
     })
 }
 

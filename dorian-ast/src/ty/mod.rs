@@ -5,38 +5,60 @@ mod util;
 
 pub use util::*;
 
+type Bool = bool;
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum Type {
     Concrete(ConcreteType),
     Function(FunctionType),
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum ConcreteType {
     Data(DataType),
     Void(VoidType),
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+impl ConcreteType {
+    pub fn get_signage(&self) -> Option<Bool> {
+        match self {
+            ConcreteType::Data(x) => x.get_signage(),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum DataType {
     Scalar(ScalarType),
     Vector(VectorType),
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+impl DataType {
+    pub fn get_signage(&self) -> Option<Bool> {
+        match self {
+            DataType::Scalar(ScalarType::Num(NumType::Int(IntType { signed, .. }))) => {
+                Some(*signed)
+            }
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum ScalarType {
     Num(NumType),
     Bool(BoolType),
     Ptr(PtrType),
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum NumType {
     Int(IntType),
     Float(FloatType),
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct IntType {
     pub width: IntWidth,
     pub signed: bool,
@@ -109,7 +131,7 @@ pub struct BoolType;
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct PtrType;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct VectorType {
     pub elem: ScalarType,
     pub len: u32,

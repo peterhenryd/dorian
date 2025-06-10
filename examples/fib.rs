@@ -7,17 +7,15 @@ use dorian_llvm::Llvm;
 use inkwell::OptimizationLevel;
 
 fn main() {
-    let mut module = Module::new("fib_example");
-
     let fib_function = Function::new("fib")
         .with_return_type(ty::u32())
         .add_param(ty::u32())
         .build_block(build_fib_body);
 
+    let mut module = Module::new("fib_example");
     module.add_function(fib_function);
 
     let llvm = Llvm::new();
-
     let compiled_module = llvm.compile_module(&module);
 
     let execution_engine = compiled_module
@@ -28,6 +26,8 @@ fn main() {
             .get_function::<unsafe extern "C" fn(u32) -> u32>("fib")
             .unwrap()
     };
+
+    println!("{}", compiled_module.to_string());
 
     let result = unsafe { fib_fn.call(10) };
 

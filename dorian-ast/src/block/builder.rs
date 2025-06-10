@@ -1,7 +1,8 @@
 use crate::block::Block;
-use crate::stmt::{IfElse, IfStmt, Stmt};
+use crate::stmt::{IfElse, IfStmt, ReturnStmt, Stmt};
 use crate::val::Value;
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct BlockBuilder {
     stmts: Vec<Stmt>,
 }
@@ -30,7 +31,8 @@ impl BlockBuilder {
     }
 
     pub fn ret(&mut self, value: Value) {
-        self.stmts.push(Stmt::Return(value.into()));
+        self.stmts
+            .push(Stmt::Return(ReturnStmt { value: Some(value) }));
     }
 
     pub fn finish(self) -> Block {

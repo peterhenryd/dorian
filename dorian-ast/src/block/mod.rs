@@ -3,7 +3,7 @@ use crate::stmt::Stmt;
 
 pub mod builder;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Block {
     /// **Note**: While you can do safely, modifying this field directly is not recommended as it requires you to keep
     /// track of contextual information about the block's scope and invocation context. Invalid modifications will lead

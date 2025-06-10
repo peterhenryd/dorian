@@ -2,6 +2,7 @@ use crate::block::Block;
 use crate::block::builder::BlockBuilder;
 use crate::ty::{ConcreteType, DataType, VoidType};
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Function {
     pub name: String,
     pub ty: FunctionType,
