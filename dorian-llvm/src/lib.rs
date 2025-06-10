@@ -6,14 +6,14 @@ mod ty;
 mod val;
 mod llvm;
 
-pub(crate) struct Llvm {
+pub struct Llvm {
     context: llvm::Context,
     signed_attribute: llvm::Attribute,
     unsigned_attribute: llvm::Attribute,
 }
 
 impl Llvm {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         let context = llvm::Context::create();
         let signed_attribute = context.create_string_attribute("signage", "signed");
         let unsigned_attribute = context.create_string_attribute("signage", "unsigned");
