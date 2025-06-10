@@ -14,7 +14,7 @@ fn main() {
 
     let mut module = Module::new("fib_example");
     module.add_function(fib_function);
-
+    
     let llvm = Llvm::new();
     let compiled_module = llvm.compile_module(&module);
 

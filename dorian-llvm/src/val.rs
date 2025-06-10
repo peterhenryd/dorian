@@ -440,6 +440,8 @@ impl Llvm {
             .unwrap()
             .try_as_basic_value()
             .unwrap_left();
+        
+        dbg!(signage);
 
         llvm::Value::new(value, signage)
     }

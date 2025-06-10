@@ -120,6 +120,7 @@ impl<'ctx> Scope<'ctx, '_> {
             self.builder.build_unconditional_branch(merge_block).unwrap();
         }
 
+        self.builder.position_at_end(else_block);
         let else_terminates = if let Some(if_else) = &stmt.if_else {
             self.compile_if_else(if_else)
         } else {

@@ -24,10 +24,6 @@ impl Llvm {
             unsigned_attribute,
         }
     }
-
-    pub(crate) fn context(&self) -> &llvm::Context {
-        &self.context
-    }
 }
 
 impl Backend for Llvm {
