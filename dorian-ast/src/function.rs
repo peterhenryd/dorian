@@ -1,16 +1,17 @@
+use std::borrow::Cow;
 use crate::block::Block;
 use crate::block::builder::BlockBuilder;
 use crate::ty::{ConcreteType, DataType, VoidType};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Function {
-    pub name: String,
+pub struct Function<'s> {
+    pub name: Cow<'s, str>,
     pub ty: FunctionType,
-    pub body: Block,
+    pub body: Block<'s>,
 }
 
-impl Function {
-    pub fn new(name: impl Into<String>) -> Self {
+impl<'s> Function<'s> {
+    pub fn new(name: impl Into<Cow<'s, str>>) -> Self {
         Function {
             name: name.into(),
             ty: FunctionType::default(),
@@ -28,7 +29,7 @@ impl Function {
         self
     }
 
-    pub fn with_block(mut self, block: Block) -> Self {
+    pub fn with_block(mut self, block: Block<'s>) -> Self {
         self.body = block;
         self
     }

@@ -5,193 +5,193 @@ use crate::val::{
 
 // impl From<...> for Value
 
-impl From<ContextValue> for Value {
-    fn from(value: ContextValue) -> Self {
+impl<'s> From<ContextValue<'s>> for Value<'s> {
+    fn from(value: ContextValue<'s>) -> Self {
         Value::Context(value)
     }
 }
 
-impl From<Arg> for Value {
+impl<'s> From<Arg> for Value<'s> {
     fn from(value: Arg) -> Self {
         Value::Context(value.into())
     }
 }
 
-impl From<Var> for Value {
-    fn from(value: Var) -> Self {
+impl<'s> From<Var<'s>> for Value<'s> {
+    fn from(value: Var<'s>) -> Self {
         Value::Context(value.into())
     }
 }
 
-impl From<Expr> for Value {
-    fn from(value: Expr) -> Self {
+impl<'s> From<Expr<'s>> for Value<'s> {
+    fn from(value: Expr<'s>) -> Self {
         Value::Expr(Box::new(value))
     }
 }
 
-impl From<Bin> for Value {
-    fn from(value: Bin) -> Self {
+impl<'s> From<Bin<'s>> for Value<'s> {
+    fn from(value: Bin<'s>) -> Self {
         Value::Expr(Box::new(value.into()))
     }
 }
 
-impl From<Una> for Value {
-    fn from(value: Una) -> Self {
+impl<'s> From<Una<'s>> for Value<'s> {
+    fn from(value: Una<'s>) -> Self {
         Value::Expr(Box::new(value.into()))
     }
 }
 
-impl From<Lit> for Value {
+impl From<Lit> for Value<'_> {
     fn from(value: Lit) -> Self {
         Value::Lit(value)
     }
 }
 
-impl From<Num> for Value {
+impl From<Num> for Value<'_> {
     fn from(value: Num) -> Self {
         Value::Lit(value.into())
     }
 }
 
-impl From<Int> for Value {
+impl From<Int> for Value<'_> {
     fn from(value: Int) -> Self {
         Value::Lit(value.into())
     }
 }
 
-impl From<SignedInt> for Value {
+impl From<SignedInt> for Value<'_> {
     fn from(value: SignedInt) -> Self {
         Value::Lit(value.into())
     }
 }
 
-impl From<i8> for Value {
+impl From<i8> for Value<'_> {
     fn from(value: i8) -> Self {
         Value::Lit(value.into())
     }
 }
 
-impl From<i16> for Value {
+impl From<i16> for Value<'_> {
     fn from(value: i16) -> Self {
         Value::Lit(value.into())
     }
 }
 
-impl From<i32> for Value {
+impl From<i32> for Value<'_> {
     fn from(value: i32) -> Self {
         Value::Lit(value.into())
     }
 }
 
-impl From<i64> for Value {
+impl From<i64> for Value<'_> {
     fn from(value: i64) -> Self {
         Value::Lit(value.into())
     }
 }
 
-impl From<i128> for Value {
+impl From<i128> for Value<'_> {
     fn from(value: i128) -> Self {
         Value::Lit(value.into())
     }
 }
 
-impl From<UnsignedInt> for Value {
+impl<'s> From<UnsignedInt> for Value<'s> {
     fn from(value: UnsignedInt) -> Self {
         Value::Lit(value.into())
     }
 }
 
-impl From<u8> for Value {
+impl From<u8> for Value<'_> {
     fn from(value: u8) -> Self {
         Value::Lit(value.into())
     }
 }
 
-impl From<u16> for Value {
+impl From<u16> for Value<'_> {
     fn from(value: u16) -> Self {
         Value::Lit(value.into())
     }
 }
 
-impl From<u32> for Value {
+impl From<u32> for Value<'_> {
     fn from(value: u32) -> Self {
         Value::Lit(value.into())
     }
 }
 
-impl From<u64> for Value {
+impl From<u64> for Value<'_> {
     fn from(value: u64) -> Self {
         Value::Lit(value.into())
     }
 }
 
-impl From<u128> for Value {
+impl From<u128> for Value<'_> {
     fn from(value: u128) -> Self {
         Value::Lit(value.into())
     }
 }
 
-impl From<Float> for Value {
+impl<'s> From<Float> for Value<'s> {
     fn from(value: Float) -> Self {
         Value::Lit(value.into())
     }
 }
 
-impl From<f32> for Value {
+impl<'s> From<f32> for Value<'s> {
     fn from(value: f32) -> Self {
         Value::Lit(value.into())
     }
 }
 
-impl From<f64> for Value {
+impl<'s> From<f64> for Value<'s> {
     fn from(value: f64) -> Self {
         Value::Lit(value.into())
     }
 }
 
-impl From<bool> for Value {
+impl<'s> From<bool> for Value<'s> {
     fn from(value: bool) -> Self {
         Value::Lit(value.into())
     }
 }
 
-impl From<Call> for Value {
-    fn from(value: Call) -> Self {
+impl<'s> From<Call<'s>> for Value<'s> {
+    fn from(value: Call<'s>) -> Self {
         Value::Call(value)
     }
 }
 
 // impl From<...> for ContextValue
 
-impl From<Arg> for ContextValue {
+impl From<Arg> for ContextValue<'_> {
     fn from(value: Arg) -> Self {
         ContextValue::Arg(value)
     }
 }
 
-impl From<Var> for ContextValue {
-    fn from(value: Var) -> Self {
+impl<'s> From<Var<'s>> for ContextValue<'s> {
+    fn from(value: Var<'s>) -> Self {
         ContextValue::Var(value)
     }
 }
 
 // impl From<...> for Expr
 
-impl From<Bin> for Expr {
-    fn from(value: Bin) -> Self {
+impl<'s> From<Bin<'s>> for Expr<'s> {
+    fn from(value: Bin<'s>) -> Self {
         Expr::Bin(value)
     }
 }
 
-impl From<Una> for Expr {
-    fn from(value: Una) -> Self {
+impl<'s> From<Una<'s>> for Expr<'s> {
+    fn from(value: Una<'s>) -> Self {
         Expr::Una(value)
     }
 }
 
 // impl From<...> for Lit
 
-impl From<Num> for Lit {
+impl<'s> From<Num> for Lit {
     fn from(value: Num) -> Self {
         Lit::Num(value)
     }
@@ -239,7 +239,7 @@ impl From<i128> for Lit {
     }
 }
 
-impl From<UnsignedInt> for Lit {
+impl<'s> From<UnsignedInt> for Lit {
     fn from(value: UnsignedInt) -> Self {
         Lit::Num(value.into())
     }
@@ -275,25 +275,25 @@ impl From<u128> for Lit {
     }
 }
 
-impl From<Float> for Lit {
+impl<'s> From<Float> for Lit {
     fn from(value: Float) -> Self {
         Lit::Num(value.into())
     }
 }
 
-impl From<f32> for Lit {
+impl<'s> From<f32> for Lit {
     fn from(value: f32) -> Self {
         Lit::Num(value.into())
     }
 }
 
-impl From<f64> for Lit {
+impl<'s> From<f64> for Lit {
     fn from(value: f64) -> Self {
         Lit::Num(value.into())
     }
 }
 
-impl From<bool> for Lit {
+impl<'s> From<bool> for Lit {
     fn from(value: bool) -> Self {
         Lit::Bool(value)
     }
@@ -301,13 +301,13 @@ impl From<bool> for Lit {
 
 // impl From<...> for Num
 
-impl From<Int> for Num {
+impl<'s> From<Int> for Num {
     fn from(value: Int) -> Self {
         Num::Int(value)
     }
 }
 
-impl From<SignedInt> for Num {
+impl<'s> From<SignedInt> for Num {
     fn from(value: SignedInt) -> Self {
         Num::Int(value.into())
     }
@@ -343,7 +343,7 @@ impl From<i128> for Num {
     }
 }
 
-impl From<UnsignedInt> for Num {
+impl<'s> From<UnsignedInt> for Num {
     fn from(value: UnsignedInt) -> Self {
         Num::Int(value.into())
     }
@@ -379,19 +379,19 @@ impl From<u128> for Num {
     }
 }
 
-impl From<Float> for Num {
+impl<'s> From<Float> for Num {
     fn from(value: Float) -> Self {
         Num::Float(value)
     }
 }
 
-impl From<f32> for Num {
+impl<'s> From<f32> for Num {
     fn from(value: f32) -> Self {
         Num::Float(value.into())
     }
 }
 
-impl From<f64> for Num {
+impl<'s> From<f64> for Num {
     fn from(value: f64) -> Self {
         Num::Float(value.into())
     }
@@ -399,7 +399,7 @@ impl From<f64> for Num {
 
 // impl From<...> for Int
 
-impl From<SignedInt> for Int {
+impl<'s> From<SignedInt> for Int {
     fn from(value: SignedInt) -> Self {
         Int::Signed(value)
     }
@@ -435,7 +435,7 @@ impl From<i128> for Int {
     }
 }
 
-impl From<UnsignedInt> for Int {
+impl<'s> From<UnsignedInt> for Int {
     fn from(value: UnsignedInt) -> Self {
         Int::Unsigned(value)
     }
@@ -473,13 +473,13 @@ impl From<u128> for Int {
 
 // impl From<...> for Float
 
-impl From<f32> for Float {
+impl<'s> From<f32> for Float {
     fn from(value: f32) -> Self {
         Float::F32(value)
     }
 }
 
-impl From<f64> for Float {
+impl<'s> From<f64> for Float {
     fn from(value: f64) -> Self {
         Float::F64(value)
     }

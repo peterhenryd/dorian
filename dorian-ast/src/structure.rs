@@ -1,7 +1,8 @@
+use std::borrow::Cow;
 use crate::ty::DataType;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct Struct {
-    pub name: String,
+pub struct Struct<'s> {
+    pub name: Cow<'s, str>,
     pub fields: Vec<DataType>,
 }

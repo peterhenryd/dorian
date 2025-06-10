@@ -1,24 +1,17 @@
 use crate::Llvm;
 use dorian_ast::function::FunctionType;
 use dorian_ast::ty::{
-    BoolType, ConcreteType, DataType, FloatType, IntType, IntWidth, NumType, PtrType, ScalarType,
-    Type, VectorType, VoidType,
+    BoolType, ConcreteType, DataType, FloatType, IntType, IntWidth, NumType, PtrType, ScalarType
+    , VectorType, VoidType,
 };
-use inkwell::AddressSpace;
 use inkwell::types::{
-    AnyType, AnyTypeEnum, BasicMetadataTypeEnum, BasicType, BasicTypeEnum,
+    BasicMetadataTypeEnum, BasicType, BasicTypeEnum,
     FloatType as LlvmFloatType, FunctionType as LlvmFunctionType, IntType as LlvmIntType,
     PointerType as LlvmPointerType, VectorType as LlvmVectorType, VoidType as LlvmVoidType,
 };
+use inkwell::AddressSpace;
 
 impl Llvm {
-    fn compile_type(&self, ty: &Type) -> AnyTypeEnum {
-        match ty {
-            Type::Concrete(x) => self.compile_concrete_type(x).as_any_type_enum(),
-            Type::Function(x) => self.compile_function_type(x).as_any_type_enum(),
-        }
-    }
-
     fn compile_concrete_type(&self, ty: &ConcreteType) -> LlvmConcreteType {
         match ty {
             ConcreteType::Data(x) => LlvmConcreteType::Data(self.compile_data_type(x)),
@@ -110,13 +103,6 @@ impl<'ctx> LlvmConcreteType<'ctx> {
         match self {
             LlvmConcreteType::Data(x) => x.fn_type(param_types, is_var_arg),
             LlvmConcreteType::Void(x) => x.fn_type(param_types, is_var_arg),
-        }
-    }
-
-    fn as_any_type_enum(&self) -> AnyTypeEnum<'ctx> {
-        match self {
-            LlvmConcreteType::Data(x) => x.as_any_type_enum(),
-            LlvmConcreteType::Void(x) => x.as_any_type_enum(),
         }
     }
 }

@@ -1,5 +1,6 @@
+use std::borrow::Cow;
 use crate::block::Block;
-use crate::val::Value;
+use crate::val::{Value, Var};
 
 /*
 [x] build_return
@@ -106,32 +107,46 @@ NP  build_direct_call
  */
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Stmt {
-    If(IfStmt),
-    While(WhileStmt),
-    Return(ReturnStmt),
+pub enum Stmt<'s> {
+    If(IfStmt<'s>),
+    While(WhileStmt<'s>),
+    Return(ReturnStmt<'s>),
+    Bind(BindStmt<'s>),
+    Assign(AssignStmt<'s>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct IfStmt {
-    pub condition: Value,
-    pub then_block: Block,
-    pub if_else: Option<IfElse>,
+pub struct IfStmt<'s> {
+    pub condition: Value<'s>,
+    pub then_block: Block<'s>,
+    pub if_else: Option<IfElse<'s>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum IfElse {
-    If(Box<IfStmt>),
-    Else(Block),
+pub enum IfElse<'s> {
+    If(Box<IfStmt<'s>>),
+    Else(Block<'s>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct WhileStmt {
-    pub condition: Value,
-    pub body: Block,
+pub struct WhileStmt<'s> {
+    pub condition: Value<'s>,
+    pub loop_block: Block<'s>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ReturnStmt {
-    pub value: Option<Value>,
+pub struct ReturnStmt<'s> {
+    pub value: Option<Value<'s>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct BindStmt<'s> {
+    pub name: Cow<'s, str>,
+    pub value: Value<'s>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct AssignStmt<'s> {
+    pub var: Var<'s>,
+    pub value: Value<'s>,
 }

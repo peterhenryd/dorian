@@ -26,9 +26,7 @@ fn main() {
             .get_function::<unsafe extern "C" fn(u32) -> u32>("fib")
             .unwrap()
     };
-
-    println!("{}", compiled_module.to_string());
-
+    
     let result = unsafe { fib_fn.call(10) };
 
     assert_eq!(result, 55, "The 10th Fibonacci number should be 55");

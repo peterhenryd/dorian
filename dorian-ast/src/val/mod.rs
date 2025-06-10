@@ -1,43 +1,43 @@
 mod convert;
 mod util;
 
+use std::borrow::Cow;
 pub use util::*;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Value {
-    Context(ContextValue),
-    Expr(Box<Expr>),
+pub enum Value<'s> {
+    Context(ContextValue<'s>),
+    Expr(Box<Expr<'s>>),
     Lit(Lit),
-    Call(Call),
+    Call(Call<'s>),
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum ContextValue {
+#[derive(Debug, Clone, PartialEq)]
+pub enum ContextValue<'s> {
     Arg(Arg),
-    Var(Var),
+    Var(Var<'s>),
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Arg {
     pub param_index: u32,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Var {
-    pub scope_index: usize,
-    pub item_index: usize,
+#[derive(Debug, Clone, PartialEq)]
+pub struct Var<'s> {
+    pub name: Cow<'s, str>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Expr {
-    Bin(Bin),
-    Una(Una),
+pub enum Expr<'s> {
+    Bin(Bin<'s>),
+    Una(Una<'s>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Bin {
-    pub lhs: Value,
-    pub rhs: Value,
+pub struct Bin<'s> {
+    pub lhs: Value<'s>,
+    pub rhs: Value<'s>,
     pub op: BinOp,
     pub no_wrap: bool,
 }
@@ -69,8 +69,8 @@ pub enum BinOp {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Una {
-    pub operand: Value,
+pub struct Una<'s> {
+    pub operand: Value<'s>,
     pub op: UnaOp,
     pub no_wrap: bool,
 }
@@ -124,7 +124,7 @@ pub enum Float {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Call {
-    pub function_name: String,
-    pub args: Vec<Value>,
+pub struct Call<'s> {
+    pub function_name: Cow<'s, str>,
+    pub args: Vec<Value<'s>>,
 }

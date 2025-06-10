@@ -1,9 +1,10 @@
-use crate::val::{Arg, Bin, BinOp, Call, Lit, Una, UnaOp, Value};
+use std::borrow::Cow;
+use crate::val::{Arg, Bin, BinOp, Call, Lit, Una, UnaOp, Value, Var};
 
 macro_rules! bin_op {
     ($($function:ident => $variant:ident),+ $(,)?) => {
         $(
-        pub fn $function<T: From<Bin>>(lhs: Value, rhs: Value) -> T {
+        pub fn $function<'s, T: From<Bin<'s>>>(lhs: Value<'s>, rhs: Value<'s>) -> T {
                 T::from(Bin {
                     lhs,
                     rhs,
@@ -36,7 +37,7 @@ bin_op! {
     ge => Ge,
 }
 
-pub fn neg<T: From<Una>>(value: Value) -> T {
+pub fn neg<'s, T: From<Una<'s>>>(value: Value<'s>) -> T {
     T::from(Una {
         operand: value,
         op: UnaOp::Neg,
@@ -44,7 +45,7 @@ pub fn neg<T: From<Una>>(value: Value) -> T {
     })
 }
 
-pub fn not<T: From<Una>>(value: Value) -> T {
+pub fn not<'s, T: From<Una<'s>>>(value: Value<'s>) -> T {
     T::from(Una {
         operand: value,
         op: UnaOp::Not,
@@ -56,11 +57,17 @@ pub fn arg<T: From<Arg>>(param_index: u32) -> T {
     T::from(Arg { param_index })
 }
 
+pub fn var<'s, T: From<Var<'s>>>(name: impl Into<Cow<'s, str>>) -> T {
+    T::from(Var { 
+        name: name.into(),
+    })
+}
+
 pub fn lit<T: Into<Lit>, U: From<Lit>>(value: T) -> U {
     U::from(value.into())
 }
 
-pub fn call<T: From<Call>>(function_name: impl Into<String>, args: impl Into<Vec<Value>>) -> T {
+pub fn call<'s, T: From<Call<'s>>>(function_name: impl Into<Cow<'s, str>>, args: impl Into<Vec<Value<'s>>>) -> T {
     T::from(Call {
         function_name: function_name.into(),
         args: args.into(),

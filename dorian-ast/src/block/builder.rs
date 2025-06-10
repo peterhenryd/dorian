@@ -1,24 +1,25 @@
+use std::borrow::Cow;
 use crate::block::Block;
-use crate::stmt::{IfElse, IfStmt, ReturnStmt, Stmt};
-use crate::val::Value;
+use crate::stmt::{AssignStmt, BindStmt, IfElse, IfStmt, ReturnStmt, Stmt, WhileStmt};
+use crate::val::{Value, Var};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct BlockBuilder {
-    stmts: Vec<Stmt>,
+pub struct BlockBuilder<'s> {
+    stmts: Vec<Stmt<'s>>,
 }
 
-impl BlockBuilder {
+impl<'s> BlockBuilder<'s> {
     pub fn new() -> Self {
         Self { stmts: vec![] }
     }
 
     pub fn if_then(
         &mut self,
-        condition: Value,
-        then: impl FnOnce(&mut BlockBuilder),
-    ) -> IfStmtBuilder {
+        condition: Value<'s>,
+        build: impl FnOnce(&mut BlockBuilder),
+    ) -> IfStmtBuilder<'s, '_, '_> {
         let mut then_block = Block::build();
-        then(&mut then_block);
+        build(&mut then_block);
 
         IfStmtBuilder {
             parent: Parent::Block(self),
@@ -29,24 +30,50 @@ impl BlockBuilder {
             }),
         }
     }
+    
+    pub fn loop_while(
+        &mut self,
+        condition: Value<'s>,
+        build: impl FnOnce(&mut BlockBuilder),
+    ) {
+        let mut loop_block = Block::build();
+        build(&mut loop_block);
 
-    pub fn ret(&mut self, value: Value) {
+        self.stmts.push(Stmt::While(WhileStmt {
+            condition: condition.into(),
+            loop_block: loop_block.finish(),
+        }));
+    }
+
+    pub fn ret(&mut self, value: Value<'s>) {
         self.stmts
             .push(Stmt::Return(ReturnStmt { value: Some(value) }));
     }
+    
+    pub fn bind(&mut self, name: impl Into<Cow<'s, str>>, value: Value<'s>) {
+        let name = name.into();
+        self.stmts.push(Stmt::Bind(BindStmt {
+            name: name.clone(),
+            value: value.into(),
+        }));
+    }
 
-    pub fn finish(self) -> Block {
+    pub fn assign(&mut self, var: Var<'s>, value: Value<'s>) {
+        self.stmts.push(Stmt::Assign(AssignStmt { var, value }));
+    }
+    
+    pub fn finish(self) -> Block<'s> {
         Block { stmts: self.stmts }
     }
 }
 
-enum Parent<'a, 'p> {
-    Block(&'p mut BlockBuilder),
-    IfStmt(&'p mut IfStmtBuilder<'p, 'a>),
+enum Parent<'s, 'a, 'p> {
+    Block(&'p mut BlockBuilder<'s>),
+    IfStmt(&'p mut IfStmtBuilder<'s, 'p, 'a>),
 }
 
-impl Parent<'_, '_> {
-    fn insert(&mut self, stmt: IfStmt) {
+impl<'s> Parent<'s, '_, '_> {
+    fn insert(&mut self, stmt: IfStmt<'s>) {
         match self {
             Parent::Block(builder) => {
                 builder.stmts.push(Stmt::If(stmt));
@@ -58,17 +85,17 @@ impl Parent<'_, '_> {
     }
 }
 
-pub struct IfStmtBuilder<'a, 'p> {
-    parent: Parent<'a, 'p>,
-    stmt: Option<IfStmt>,
+pub struct IfStmtBuilder<'s, 'a, 'p> {
+    parent: Parent<'s, 'a, 'p>,
+    stmt: Option<IfStmt<'s>>,
 }
 
-impl<'a, 'p> IfStmtBuilder<'a, 'p> {
+impl<'s, 'a, 'p> IfStmtBuilder<'s, 'a, 'p> {
     pub fn else_if<'b>(
         &'a mut self,
-        condition: impl Into<Value>,
+        condition: impl Into<Value<'s>>,
         then: impl FnOnce(&mut BlockBuilder),
-    ) -> IfStmtBuilder<'b, 'a> {
+    ) -> IfStmtBuilder<'s, 'b, 'a> {
         let mut then_block = Block::build();
         then(&mut then_block);
 
@@ -90,7 +117,7 @@ impl<'a, 'p> IfStmtBuilder<'a, 'p> {
     }
 }
 
-impl Drop for IfStmtBuilder<'_, '_> {
+impl Drop for IfStmtBuilder<'_, '_, '_> {
     fn drop(&mut self) {
         if let Some(stmt) = self.stmt.take() {
             self.parent.insert(stmt);

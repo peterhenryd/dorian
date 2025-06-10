@@ -12,7 +12,7 @@ use inkwell::{FloatPredicate, IntPredicate};
 #[derive(Debug, Copy, Clone)]
 pub struct LlvmValue<'ctx> {
     pub(crate) value: BasicValueEnum<'ctx>,
-    signage: Option<bool>,
+    pub(crate) signage: Option<bool>,
 }
 
 impl Llvm {
@@ -29,8 +29,6 @@ impl Llvm {
             Value::Call(x) => self.compile_call(x, scope),
         };
 
-        scope.insert_value(value);
-
         value
     }
 
@@ -42,7 +40,7 @@ impl Llvm {
         match value {
             ContextValue::Arg(arg) => self.compile_arg_value(arg, scope),
             ContextValue::Var(var) => scope
-                .get_var(var)
+                .get_var(var, true)
                 .expect("Failed to get variable from scope"),
         }
     }

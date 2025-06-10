@@ -7,7 +7,7 @@ using [LLVM](https://llvm.org) (via [Inkwell](https://github.com/TheDan64/inkwel
 ## Status
 
 Dorian is in an early stage of development. The API is unstable and may change frequently. Moreover, the library is
-largely incomplete and unusable for anything other than [experimentation](/examples/fib.rs).
+largely incomplete and unusable for anything other than [experimentation](/recursive_fib.rs).
 
 If you'd like to use Dorian as a Cargo dependency, please do not use the published `dorian` crate from Cargo. 
 Instead, add the following to your `Cargo.toml`:
