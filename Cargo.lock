@@ -198,6 +198,7 @@ version = "0.1.0"
 dependencies = [
  "cranelift",
  "dorian-ast",
+ "target-lexicon",
 ]
 
 [[package]]

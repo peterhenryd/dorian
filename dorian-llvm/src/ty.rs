@@ -1,20 +1,13 @@
-use inkwell::types::BasicType;
-use ast::function::FunctionType;
-use ast::ty::{BoolType, ConcreteType, DataType, FloatType, IntType, IntWidth, NumType, PtrType, ScalarType, VectorType, VoidType};
 use crate::{llvm, Llvm};
+use ast::ty::{BoolType, FloatType, IntType, IntWidth, NumType, PtrType, ScalarType, Type, VectorType};
+use inkwell::types::BasicType;
+use ast::function::Signature;
 
 impl Llvm {
-    fn compile_concrete_type(&self, ty: &ConcreteType) -> llvm::ConcreteType {
+    pub(crate) fn compile_type(&self, ty: &Type) -> llvm::Type {
         match ty {
-            ConcreteType::Data(x) => llvm::ConcreteType::Data(self.compile_data_type(x)),
-            ConcreteType::Void(x) => llvm::ConcreteType::Void(self.compile_void_type(x)),
-        }
-    }
-
-    pub(crate) fn compile_data_type(&self, ty: &DataType) -> llvm::Type {
-        match ty {
-            DataType::Scalar(x) => self.compile_scalar_type(x).as_basic_type_enum(),
-            DataType::Vector(x) => self.compile_vector_type(x).as_basic_type_enum(),
+            Type::Scalar(x) => self.compile_scalar_type(x).as_basic_type_enum(),
+            Type::Vector(x) => self.compile_vector_type(x).as_basic_type_enum(),
         }
     }
 
@@ -35,7 +28,6 @@ impl Llvm {
 
     fn compile_int_type(&self, ty: &IntType) -> llvm::IntType {
         match ty.width {
-            IntWidth::I(bits) => self.context.custom_width_int_type(bits),
             IntWidth::I8 => self.context.i8_type(),
             IntWidth::I16 => self.context.i16_type(),
             IntWidth::I32 => self.context.i32_type(),
@@ -61,22 +53,31 @@ impl Llvm {
         self.context.ptr_type(llvm::AddressSpace::default())
     }
 
-    fn compile_void_type(&self, _: &VoidType) -> llvm::VoidType {
-        self.context.void_type()
-    }
-
     fn compile_vector_type(&self, ty: &VectorType) -> llvm::VectorType {
         self.compile_scalar_type(&ty.elem).vec_type(ty.len)
     }
 
-    pub(crate) fn compile_function_type(&self, ty: &FunctionType) -> llvm::FunctionType {
-        let return_type = self.compile_concrete_type(&ty.return_type);
-        let param_types = ty
-            .params
-            .iter()
-            .map(|param_type| self.compile_data_type(&param_type).into())
+    pub(crate) fn compile_signature(&self, signature: &Signature) -> llvm::FunctionType {
+        let param_types = signature.input.iter()
+            .map(|param| self.compile_type(param).into())
             .collect::<Vec<_>>();
+        let return_type = self.compile_aggregate_type(&signature.output);
 
         return_type.fn_type(&param_types, false)
+    }
+    
+    fn compile_aggregate_type(&self, types: &[Type]) -> llvm::AggregateType {
+        match types.len() {
+            0 => llvm::AggregateType::Void(self.context.void_type()),
+            1 => llvm::AggregateType::Value(self.compile_type(&types[0])),
+            _ => {
+                let field_types = types.iter()
+                    .map(|x| self.compile_type(x))
+                    .collect::<Vec<_>>();
+                let struct_type = self.context.struct_type(&field_types, false);
+                
+                llvm::AggregateType::Struct(struct_type)
+            }
+        }
     }
 }

@@ -8,8 +8,8 @@ pub mod prelude {
     pub use crate::ast::block::Block;
     pub use crate::ast::block::builder::*;
     pub use crate::ast::block::stmt::*;
-    pub use crate::ast::ty::{Type, ConcreteType, DataType, ScalarType, NumType, IntType, IntWidth, FloatType, BoolType,
-                             PtrType, VectorType, VoidType};  
+    pub use crate::ast::ty::{Type, ScalarType, NumType, IntType, IntWidth, FloatType, BoolType, PtrType,
+                             VectorType, VoidType};  
     pub use crate::ast::ty::util as ty;
     pub use crate::ast::val::{Value, ContextValue, Arg, Var, Expr, Bin, BinOp, Una, UnaOp, Lit, Num, Int, SignedInt, 
                               UnsignedInt, Float, Call};

@@ -25,26 +25,7 @@ pub(crate) use inkwell::{
     FloatPredicate as FloatCmpOp,
     IntPredicate as IntCmpOp,
 };
-use inkwell::types::BasicType;
-
-#[derive(Copy, Clone)]
-pub(crate) enum ConcreteType<'ctx> {
-    Data(Type<'ctx>),
-    Void(VoidType<'ctx>),
-}
-
-impl<'ctx> ConcreteType<'ctx> {
-    pub(crate) fn fn_type(
-        &self,
-        param_types: &[MetadataType<'ctx>],
-        is_var_arg: bool,
-    ) -> FunctionType<'ctx> {
-        match self {
-            ConcreteType::Data(x) => x.fn_type(param_types, is_var_arg),
-            ConcreteType::Void(x) => x.fn_type(param_types, is_var_arg),
-        }
-    }
-}
+use inkwell::types::{BasicType, StructType};
 
 pub(crate) enum ScalarType<'ctx> {
     Int(IntType<'ctx>),
@@ -82,5 +63,25 @@ pub(crate) struct Value<'ctx> {
 impl<'ctx> Value<'ctx> {
     pub(crate) fn new(raw: RawValue<'ctx>, signage: Option<bool>) -> Self {
         Value { raw, signage }
+    }
+}
+
+pub(crate) enum AggregateType<'ctx> {
+    Value(Type<'ctx>),
+    Struct(StructType<'ctx>),
+    Void(VoidType<'ctx>),
+}
+
+impl<'ctx> AggregateType<'ctx> {
+    pub(crate) fn fn_type(
+        &self,
+        param_types: &[MetadataType<'ctx>],
+        is_var_arg: bool,
+    ) -> FunctionType<'ctx> {
+        match self {
+            AggregateType::Value(x) => x.fn_type(param_types, is_var_arg),
+            AggregateType::Struct(x) => x.fn_type(param_types, is_var_arg),
+            AggregateType::Void(x) => x.fn_type(param_types, is_var_arg),
+        }
     }
 }

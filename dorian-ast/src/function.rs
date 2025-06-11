@@ -1,12 +1,12 @@
 use std::borrow::Cow;
 use crate::block::Block;
 use crate::block::builder::BlockBuilder;
-use crate::ty::{ConcreteType, DataType, VoidType};
+use crate::ty::Type;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Function<'s> {
     pub name: Cow<'s, str>,
-    pub ty: FunctionType,
+    pub signature: Signature,
     pub body: Block<'s>,
 }
 
@@ -14,18 +14,21 @@ impl<'s> Function<'s> {
     pub fn new(name: impl Into<Cow<'s, str>>) -> Self {
         Function {
             name: name.into(),
-            ty: FunctionType::default(),
+            signature: Signature {
+                input: Vec::new(),
+                output: Vec::new(),
+            },
             body: Block::new(),
         }
     }
 
-    pub fn with_return_type(mut self, return_type: ConcreteType) -> Self {
-        self.ty.return_type = return_type;
+    pub fn add_input(mut self, param: Type) -> Self {
+        self.signature.input.push(param);
         self
     }
 
-    pub fn add_param(mut self, param: DataType) -> Self {
-        self.ty = self.ty.with_param(param);
+    pub fn add_output(mut self, output: Type) -> Self {
+        self.signature.output.push(output);
         self
     }
 
@@ -43,30 +46,7 @@ impl<'s> Function<'s> {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct FunctionType {
-    pub params: Vec<DataType>,
-    pub return_type: ConcreteType,
-}
-
-impl FunctionType {
-    pub fn new(return_type: ConcreteType) -> Self {
-        FunctionType {
-            params: Vec::new(),
-            return_type: return_type.into(),
-        }
-    }
-
-    pub fn with_param(mut self, param: DataType) -> Self {
-        self.params.push(param);
-        self
-    }
-}
-
-impl Default for FunctionType {
-    fn default() -> Self {
-        Self {
-            params: Vec::new(),
-            return_type: ConcreteType::Void(VoidType),
-        }
-    }
+pub struct Signature {
+    pub input: Vec<Type>,
+    pub output: Vec<Type>,
 }

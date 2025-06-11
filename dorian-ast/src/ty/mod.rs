@@ -1,41 +1,18 @@
-use crate::function::FunctionType;
-
 mod convert;
 pub mod util;
 
 type Bool = bool;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum Type {
-    Concrete(ConcreteType),
-    Function(FunctionType),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub enum ConcreteType {
-    Data(DataType),
-    Void(VoidType),
-}
-
-impl ConcreteType {
-    pub fn get_signage(&self) -> Option<Bool> {
-        match self {
-            ConcreteType::Data(x) => x.get_signage(),
-            _ => None,
-        }
-    }
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub enum DataType {
     Scalar(ScalarType),
     Vector(VectorType),
 }
 
-impl DataType {
+impl Type {
     pub fn get_signage(&self) -> Option<Bool> {
         match self {
-            DataType::Scalar(ScalarType::Num(NumType::Int(IntType { signed, .. }))) => {
+            Type::Scalar(ScalarType::Num(NumType::Int(IntType { signed, .. }))) => {
                 Some(*signed)
             }
             _ => None,
@@ -107,7 +84,6 @@ impl IntType {
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum IntWidth {
-    I(u32),
     I8,
     I16,
     I32,

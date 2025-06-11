@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 cranelift.workspace = true
 dorian-ast = { path = "../dorian-ast" }
+target-lexicon = "0.13.2"

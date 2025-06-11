@@ -45,9 +45,9 @@ impl<'s> BlockBuilder<'s> {
         }));
     }
 
-    pub fn ret(&mut self, value: Value<'s>) {
+    pub fn ret(&mut self, values: impl Into<Vec<Value<'s>>>) {
         self.stmts
-            .push(Stmt::Return(ReturnStmt { value: Some(value) }));
+            .push(Stmt::Return(ReturnStmt { values: values.into() }));
     }
 
     pub fn bind(&mut self, name: impl Into<Cow<'s, str>>, value: Value<'s>) {

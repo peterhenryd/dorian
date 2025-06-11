@@ -1,15 +1,8 @@
 use crate::ty::{
-    BoolType, FloatType, IntType, IntWidth, PtrType, ScalarType, VectorType, VoidType,
+    BoolType, FloatType, IntType, PtrType, ScalarType, VectorType, VoidType,
 };
 
 // Signed integer type utility functions
-
-pub fn signed_int<T: From<IntType>>(width: u32) -> T {
-    T::from(IntType {
-        width: IntWidth::I(width),
-        signed: true,
-    })
-}
 
 pub fn s8<T: From<IntType>>() -> T {
     T::from(IntType::S8)
@@ -32,13 +25,6 @@ pub fn s128<T: From<IntType>>() -> T {
 }
 
 // Unsigned integer type utility functions
-
-pub fn unsigned_int<T: From<IntType>>(width: u32) -> T {
-    T::from(IntType {
-        width: IntWidth::I(width),
-        signed: false,
-    })
-}
 
 pub fn u8<T: From<IntType>>() -> T {
     T::from(IntType::U8)

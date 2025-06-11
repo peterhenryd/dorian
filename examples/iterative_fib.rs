@@ -2,14 +2,14 @@ use dorian::prelude::*;
 
 fn main() {
     let fib_function = Function::new("iterative_fib")
-        .with_return_type(ty::u32())
-        .add_param(ty::u32())
+        .add_input(ty::u32())
+        .add_output(ty::u32())
         .build_block(build_fib_body);
 
     let mut module = Module::new("iterative_fib_example");
     module.add_function(fib_function);
 
-    let llvm = Llvm::new();
+    let mut llvm = Llvm::new();
     let compiled_module = llvm.compile_module(&module);
 
     let execution_engine = compiled_module
@@ -32,7 +32,7 @@ fn build_fib_body(scope: &mut BlockBuilder) {
     let condition = le(arg(0), lit(1i32));
     scope
         .if_then(condition, |scope| {
-            scope.ret(arg(0));
+            scope.ret([arg(0)]);
         });
 
     scope.bind("a", lit(0u32));
@@ -46,5 +46,5 @@ fn build_fib_body(scope: &mut BlockBuilder) {
         scope.assign(var("b"), var("c"));
     });
 
-    scope.ret(var("b"));
+    scope.ret([var("b")]);
 }

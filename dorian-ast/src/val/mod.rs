@@ -116,6 +116,18 @@ pub enum UnsignedInt {
     U128(u128),
 }
 
+impl UnsignedInt {
+    pub fn cast_signed(self) -> SignedInt {
+        match self {
+            UnsignedInt::U8(x) => SignedInt::B8(x as i8),
+            UnsignedInt::U16(x) => SignedInt::B16(x as i16),
+            UnsignedInt::U32(x) => SignedInt::B32(x as i32),
+            UnsignedInt::U64(x) => SignedInt::B64(x as i64),
+            UnsignedInt::U128(x) => SignedInt::B128(x as i128),
+        }
+    }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Float {
     F32(f32),

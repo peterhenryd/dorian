@@ -139,7 +139,7 @@ pub struct WhileStmt<'s> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ReturnStmt<'s> {
-    pub value: Option<Value<'s>>,
+    pub values: Vec<Value<'s>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]

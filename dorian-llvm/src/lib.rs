@@ -29,20 +29,20 @@ impl Llvm {
             unsigned_attribute,
         }
     }
-    
+
     fn compile_struct<'ctx>(&'ctx self, ast_struct: &Struct) {
         let struct_type = self.context.opaque_struct_type(&ast_struct.name);
         let fields = ast_struct
             .fields
             .iter()
-            .map(|field_type| self.compile_data_type(field_type))
+            .map(|field_type| self.compile_type(field_type))
             .collect::<Vec<_>>();
 
         struct_type.set_body(&fields, false);
     }
-    
+
     fn compile_global<'ctx>(&'ctx self, ast_global: &Global, module: &llvm::Module<'ctx>) {
-        let global_type = self.compile_data_type(&ast_global.ty);
+        let global_type = self.compile_type(&ast_global.ty);
         let global = module.add_global(global_type, None, &ast_global.name);
 
         if let Some(ast_value) = &ast_global.value {
@@ -55,13 +55,15 @@ impl Llvm {
 
         let _ = global;
     }
-    
+
     fn compile_functions<'ctx>(&'ctx self, ast_module: &Module, module: &llvm::Module<'ctx>) {
         let mut pairs = Vec::with_capacity(ast_module.functions.len());
         for ast_function in &ast_module.functions {
-            let function_type = self.compile_function_type(&ast_function.ty);
+            let function_type = self.compile_signature(&ast_function.signature);
             let function = module.add_function(&ast_function.name, function_type, None);
 
+            /*
+            TODO
             if let Some(signed) = ast_function.ty.return_type.get_signage() {
                 if signed {
                     function.add_attribute(llvm::AttributeLoc::Return, self.signed_attribute);
@@ -69,8 +71,9 @@ impl Llvm {
                     function.add_attribute(llvm::AttributeLoc::Return, self.unsigned_attribute);
                 }
             }
+             */
 
-            for (i, param) in ast_function.ty.params.iter().enumerate() {
+            for (i, param) in ast_function.signature.input.iter().enumerate() {
                 let Some(signed) = param.get_signage() else {
                     continue;
                 };
@@ -95,9 +98,9 @@ impl Llvm {
 }
 
 impl Backend for Llvm {
-    type CompiledModule<'a> = llvm::Module<'a>;
+    type CompiledModule<'ctx> = llvm::Module<'ctx>;
 
-    fn compile_module<'a>(&'a self, ast_module: &Module) -> Self::CompiledModule<'a> {
+    fn compile_module<'ctx>(&'ctx mut self, ast_module: &Module) -> Self::CompiledModule<'ctx> {
         let module = self.context.create_module(&ast_module.name);
 
         for ast_struct in &ast_module.structs {
@@ -107,7 +110,7 @@ impl Backend for Llvm {
         for ast_global in &ast_module.globals {
             self.compile_global(ast_global, &module);
         }
-        
+
         self.compile_functions(ast_module, &module);
 
         module

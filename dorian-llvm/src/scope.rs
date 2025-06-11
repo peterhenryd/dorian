@@ -161,16 +161,25 @@ impl<'ctx> LocalScope<'ctx, '_> {
     }
 
     fn compile_return_stmt(&mut self, stmt: &ReturnStmt) {
-        let Some(ast_value) = &stmt.value else {
-            self.builder.build_return(None).unwrap();
-            return;
-        };
-
-        let value = self.llvm.compile_value(ast_value, Scope::Local(self)).unwrap();
-        self.builder.build_return(Some(&value.raw)).unwrap();
+        match stmt.values.len() {
+            0 => {
+                self.builder.build_return(None).unwrap();
+            }
+            1 => {
+                let ast_value = &stmt.values[0];
+                let value = self.llvm.compile_value(ast_value, Scope::Local(self)).unwrap();
+                self.builder.build_return(Some(&value.raw)).unwrap();
+            }
+            _ => {
+                let values = stmt.values.iter()
+                    .map(|x| self.llvm.compile_value(x, Scope::Local(self)).unwrap().raw)
+                    .collect::<Vec<_>>();
+                self.builder.build_aggregate_return(&values).unwrap();
+            }
+        }
     }
 
-    fn append_block(&mut self) -> llvm::Block<'ctx> {
+    fn append_block(&self) -> llvm::Block<'ctx> {
         self.llvm.context.append_basic_block(self.function, "")
     }
 
